@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ExamWatch — Proctoring POC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --panel: #12121a;
+    --border: #1e1e2e;
+    --accent: #5b5fff;
+    --accent2: #ff5b8d;
+    --text: #e8e8f0;
+    --muted: #6b6b8a;
+    --success: #3ddc84;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background-image:
+      radial-gradient(ellipse at 20% 20%, rgba(91,95,255,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(255,91,141,0.06) 0%, transparent 60%);
+  }
+  .logo {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+  h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, var(--text) 60%, var(--muted));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 1rem;
+    margin-bottom: 3rem;
+    font-weight: 300;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 520px;
+  }
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 1rem 2rem;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn:hover { background: #6e72ff; transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  #links { margin-top: 2rem; display: none; }
+  .session-badge {
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 2rem;
+    letter-spacing: 0.4em;
+    color: var(--accent);
+    padding: 1rem;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+  }
+  .link-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .link-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .link-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .link-url {
+    font-size: 0.8rem;
+    color: var(--accent);
+    word-break: break-all;
+    text-decoration: none;
+    font-family: var(--mono);
+  }
+  .link-url:hover { color: #fff; }
+  .copy-btn {
+    margin-top: 0.4rem;
+    padding: 0.3rem 0.8rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--muted);
+    font-size: 0.7rem;
+    cursor: pointer;
+    font-family: var(--mono);
+    letter-spacing: 0.05em;
+    transition: all 0.15s;
+    align-self: flex-start;
+  }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .copy-btn.copied { color: var(--success); border-color: var(--success); }
+
+  .notice {
+    margin-top: 1.5rem;
+    padding: 0.9rem 1.1rem;
+    background: rgba(91,95,255,0.08);
+    border: 1px solid rgba(91,95,255,0.2);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .notice strong { color: var(--text); }
+</style>
+</head>
+<body>
+
+<div class="logo">ExamWatch</div>
+<h1>Exam Monitor</h1>
+<p class="subtitle">Two-device proctoring — laptop + mobile</p>
+
+<div class="card">
+  <button class="btn" id="createBtn" onclick="createSession()">
+    ⬡ &nbsp; Create New Session
+  </button>
+
+  <div id="links">
+    <div class="session-badge" id="sessionId">——</div>
+    <div class="link-row" id="linkRows"></div>
+    <div class="notice">
+      <strong>📱 Mobile access:</strong> Make sure your phone is on the <strong>same WiFi</strong> as this computer, then open the Mobile Link in Chrome or Safari.<br><br>
+      <strong>🔒 Camera note:</strong> Mobile browsers require the page to be served over HTTP on the local network (already handled).
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-top: 2rem;">
+  <h2 style="font-size: 1.15rem; font-weight: 600; font-family: var(--mono); color: var(--accent); margin-bottom: 1.2rem; text-transform: uppercase; letter-spacing: 0.1em; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">📁 Recorded Sessions</h2>
+  <div id="recordingsList" style="display: flex; flex-direction: column; gap: 0.75rem;">
+    <div style="font-size: 0.8rem; color: var(--muted); text-align: center; font-family: var(--mono); padding: 1rem 0;">No recordings found. Start a session and click Record.</div>
+  </div>
+</div>
+
+<!-- Sleek inline video player modal -->
+<div id="videoModal" style="display: none; position: fixed; inset: 0; background: rgba(10,10,15,0.9); z-index: 100; align-items: center; justify-content: center; padding: 2rem; backdrop-filter: blur(8px);">
+  <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 800px; overflow: hidden; display: flex; flex-direction: column; position: relative;">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);">
+      <span id="videoModalTitle" style="font-family: var(--mono); font-size: 0.85rem; color: var(--text); font-weight: bold; letter-spacing: 0.05em;">Session Playback</span>
+      <button onclick="closeVideoModal()" style="background: transparent; border: none; color: var(--muted); font-size: 1.5rem; cursor: pointer; transition: color 0.2s; line-height: 1;">&times;</button>
+    </div>
+    <div style="aspect-ratio: 16/9; background: #000; width: 100%;">
+      <video id="modalVideoPlayer" controls style="width: 100%; height: 100%; object-fit: contain;"></video>
+    </div>
+  </div>
+</div>
+
+<script>
+async function createSession() {
+  const btn = document.getElementById("createBtn");
+  btn.disabled = true;
+  btn.textContent = "Creating…";
+
+  try {
+    const res  = await fetch("/create_session");
+    const data = await res.json();
+
+    document.getElementById("sessionId").textContent = data.session_id;
+    document.getElementById("links").style.display = "block";
+
+    const links = [
+      { label: "💻  Laptop Link",    url: data.laptop_link },
+      { label: "📱  Mobile Link",    url: data.mobile_link },
+      { label: "🖥️  Dashboard",      url: data.dashboard_link, open: true }
+    ];
+
+    document.getElementById("linkRows").innerHTML = links.map(l => `
+      <div class="link-item">
+        <span class="link-label">${l.label}</span>
+        <a class="link-url" href="${l.url}" target="_blank">${l.url}</a>
+        <button class="copy-btn" onclick="copyLink(this, '${l.url}')">Copy</button>
+      </div>
+    `).join("");
+
+    btn.textContent = "⬡  Create Another Session";
+    btn.disabled = false;
+  } catch (e) {
+    btn.textContent = "Error — retry";
+    btn.disabled = false;
+  }
+}
+
+function copyLink(btn, url) {
+  navigator.clipboard.writeText(url).then(() => {
+    btn.textContent = "Copied ✓";
+    btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 2000);
+  });
+}
+
+async function loadRecordings() {
+  const container = document.getElementById("recordingsList");
+  if (!container) return;
+  
+  try {
+    const res = await fetch("/list_recordings");
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const files = await res.json();
+    
+    if (files.length === 0) {
+      container.innerHTML = `
+        <div style="font-size: 0.8rem; color: var(--muted); text-align: center; font-family: var(--mono); padding: 1rem 0;">No recordings found. Start a session and click Record.</div>
+      `;
+      return;
+    }
+    
+    container.innerHTML = files.map(file => {
+      const date = new Date(file.created_at * 1000).toLocaleString();
+      const sizeMB = (file.size_bytes / (1024 * 1024)).toFixed(2);
+      
+      return `
+        <div class="link-item" style="flex-direction: row; justify-content: space-between; align-items: center; padding: 0.85rem 1rem; gap: 1rem;">
+          <div style="display: flex; flex-direction: column; gap: 0.2rem; flex: 1; min-width: 0;">
+            <span class="link-label" style="font-size: 0.6rem; letter-spacing: 0.1em; color: var(--accent);">SESSION: ${file.session_id}</span>
+            <span style="font-size: 0.75rem; color: var(--text); font-family: var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${date} (${sizeMB} MB)</span>
+          </div>
+          <button class="copy-btn" onclick="playVideo('${file.filename}', '${file.session_id}')" style="margin-top: 0; align-self: auto; border-color: var(--accent); color: var(--accent); padding: 0.35rem 0.9rem; flex-shrink: 0;">Play</button>
+        </div>
+      `;
+    }).join("");
+    
+  } catch (e) {
+    console.error("Failed to load recordings:", e);
+    container.innerHTML = `
+      <div style="font-size: 0.8rem; color: var(--accent2); text-align: center; font-family: var(--mono); padding: 1rem 0;">Failed to load recordings.</div>
+    `;
+  }
+}
+
+function playVideo(filename, sessionId) {
+  const modal = document.getElementById("videoModal");
+  const video = document.getElementById("modalVideoPlayer");
+  const title = document.getElementById("videoModalTitle");
+  
+  if (modal && video && title) {
+    title.textContent = `Session Playback: ${sessionId}`;
+    video.src = `/recordings/${filename}`;
+    modal.style.display = "flex";
+    video.play();
+  }
+}
+
+function closeVideoModal() {
+  const modal = document.getElementById("videoModal");
+  const video = document.getElementById("modalVideoPlayer");
+  if (modal && video) {
+    video.pause();
+    video.src = "";
+    modal.style.display = "none";
+  }
+}
+
+document.addEventListener("DOMContentLoaded", loadRecordings);
+</script>
+</body>
+</html>

@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>{{ device|title }} Camera — ExamWatch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --panel: #12121a;
+    --border: #1e1e2e;
+    --accent: {% if device == 'mobile' %}#ff5b8d{% else %}#5b5fff{% endif %};
+    --text: #e8e8f0;
+    --muted: #6b6b8a;
+    --success: #3ddc84;
+    --error: #ff4d6d;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 1rem 2rem;
+  }
+  .header {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+  .device-badge {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.25em;
+    color: var(--accent);
+    text-transform: uppercase;
+    padding: 0.3rem 0.8rem;
+    border: 1px solid var(--accent);
+    border-radius: 100px;
+  }
+  .session-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+  .video-wrap {
+    width: 100%;
+    max-width: 480px;
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #000;
+    border: 2px solid var(--border);
+    aspect-ratio: 4/3;
+    margin-bottom: 1.2rem;
+  }
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  /* Mobile: flip front camera */
+  {% if device == 'mobile' %}
+  video.front { transform: scaleX(-1); }
+  {% endif %}
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10,10,15,0.85);
+    gap: 0.75rem;
+    transition: opacity 0.3s;
+  }
+  .overlay.hidden { opacity: 0; pointer-events: none; }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .overlay-text {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-align: center;
+    padding: 0 1rem;
+  }
+
+  /* Status bar */
+  .status-bar {
+    width: 100%;
+    max-width: 480px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
+  .status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.8rem;
+  }
+  .status-key { color: var(--muted); }
+  .status-val { font-family: var(--mono); font-size: 0.75rem; }
+  .dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    background: var(--muted);
+  }
+  .dot.live { background: var(--success); box-shadow: 0 0 6px var(--success); }
+  .dot.error { background: var(--error); }
+
+  .error-box {
+    width: 100%;
+    max-width: 480px;
+    background: rgba(255,77,109,0.08);
+    border: 1px solid rgba(255,77,109,0.3);
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    font-size: 0.82rem;
+    color: #ff9aad;
+    line-height: 1.6;
+    display: none;
+  }
+  .error-box.show { display: block; }
+
+  /* Camera switch button (mobile) */
+  .cam-switch {
+    width: 100%;
+    max-width: 480px;
+    padding: 0.8rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .cam-switch:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Google Meet style controls */
+  .meet-controls {
+    display: flex;
+    justify-content: center;
+    gap: 1.2rem;
+    margin-bottom: 1.2rem;
+    width: 100%;
+    max-width: 480px;
+  }
+  .control-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  }
+  .control-btn:hover {
+    background: rgba(255, 255, 255, 0.18);
+    transform: scale(1.05);
+  }
+  .control-btn.muted {
+    background: var(--error);
+  }
+  .control-btn.muted:hover {
+    background: #ff3355;
+  }
+  .control-btn svg {
+    width: 24px;
+    height: 24px;
+  }
+  .control-btn .icon-off { display: none; }
+  .control-btn.muted .icon-on { display: none; }
+  .control-btn.muted .icon-off { display: block; }
+
+  /* Video muted placeholder overlay */
+  .video-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #12121a;
+    gap: 1rem;
+    z-index: 2;
+  }
+  .video-placeholder .avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 2.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--sans);
+    text-transform: uppercase;
+    box-shadow: 0 4px 20px rgba(91,95,255,0.3);
+  }
+  .video-placeholder .muted-label {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* Interviewer main area placeholder (laptop) */
+  .interviewer-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #12121a;
+    z-index: 1;
+  }
+
+  /* Status overlay for the interviewer (laptop) */
+  .interviewer-status-overlay {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    display: flex;
+    align-items: center;
+    background: rgba(18, 18, 26, 0.85);
+    border: 1px solid var(--border);
+    padding: 0.35rem 0.8rem;
+    border-radius: 100px;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    color: var(--text);
+    z-index: 5;
+  }
+  .interviewer-status-overlay .dot {
+    width: 8px;
+    height: 8px;
+    margin-right: 6px;
+  }
+
+  /* Self view dock (laptop) */
+  .self-dock {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    width: 140px;
+    height: 105px;
+    background: rgba(18, 18, 26, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  }
+  .self-title {
+    font-family: var(--mono);
+    font-size: 0.55rem;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.4rem;
+    background: rgba(0,0,0,0.4);
+    color: var(--text);
+    font-weight: bold;
+  }
+  .self-video-wrap {
+    flex: 1;
+    position: relative;
+    background: #000;
+  }
+  .self-video-wrap video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .self-video-wrap .video-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #12121a;
+    gap: 0.4rem;
+    z-index: 2;
+  }
+  .self-video-wrap .video-placeholder .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(91,95,255,0.3);
+  }
+  .self-video-wrap .video-placeholder .muted-label {
+    font-family: var(--mono);
+    font-size: 0.55rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* Split layout container */
+  .main-layout {
+    display: flex;
+    flex-direction: row;
+    gap: 1.5rem;
+    width: 100%;
+    max-width: 480px;
+    justify-content: center;
+    transition: max-width 0.3s ease;
+  }
+  
+  .show-editor .main-layout {
+    max-width: 1000px;
+  }
+  
+  .left-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 320px;
+    max-width: 480px;
+    width: 100%;
+  }
+  
+  .right-panel {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    min-width: 320px;
+    max-width: 480px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    height: 100%;
+    aspect-ratio: 4/3;
+  }
+  
+  .show-editor .right-panel {
+    display: flex;
+  }
+  
+  .editor-textarea {
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    background: #181824;
+    border: none;
+    outline: none;
+    color: #abb2bf;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    padding: 1.25rem;
+    resize: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="device-badge">{{ device }} camera</div>
+  <div class="session-label">SESSION&nbsp; {{ session_id }}</div>
+</div>
+
+<div class="main-layout" id="mainLayout">
+  <!-- Left Panel: Video feed + Controls + Stats -->
+  <div class="left-panel">
+    <div class="video-wrap">
+      {% if device == 'laptop' %}
+        <!-- MAIN FOCUS: Interviewer Feed -->
+        <video id="interviewerVideo" autoplay playsinline style="display: none; width:100%; height:100%; object-fit:cover;"></video>
+        <div class="interviewer-placeholder" id="interviewerPlaceholder">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">🧑‍🏫</div>
+          <div style="font-size: 1.1rem; text-transform: uppercase; font-family: var(--mono); color: var(--muted);">Interviewer Offline</div>
+        </div>
+        
+        <div class="interviewer-status-overlay" id="interviewerStatusOverlay">
+          <span class="dot" id="interviewerDot"></span>
+          <span id="interviewerStatusText">Offline</span>
+          <span id="interviewerMicIcon" style="margin-left: 8px; display: none;">🔇</span>
+        </div>
+
+        <!-- DOCKED PICTURE-IN-PICTURE: Candidate Local Video Preview (Self View) -->
+        <div class="self-dock" id="selfDock">
+          <div class="self-title">You (Candidate)</div>
+          <div class="self-video-wrap">
+            <video id="video" autoplay playsinline muted></video>
+            <div class="video-placeholder" id="videoMutedPlaceholder" style="display: none;">
+              <div class="avatar">L</div>
+              <div class="muted-label">Muted</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Overlay Loader for Candidate camera initiation -->
+        <div class="overlay" id="overlay">
+          <div class="spinner"></div>
+          <div class="overlay-text" id="overlayText">Requesting camera access…</div>
+        </div>
+
+      {% else %}
+        <!-- Mobile Mode: Candidate Local Video Preview is the Main Focus -->
+        <video id="video" autoplay playsinline muted></video>
+        <div class="overlay" id="overlay">
+          <div class="spinner"></div>
+          <div class="overlay-text" id="overlayText">Requesting camera access…</div>
+        </div>
+        <!-- Video Muted Placeholder -->
+        <div class="video-placeholder" id="videoMutedPlaceholder" style="display: none;">
+          <div class="avatar" id="avatarInitials">M</div>
+          <div class="muted-label">Camera Muted</div>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Meet Style controls bar -->
+    <div class="meet-controls">
+      <button id="micBtn" class="control-btn" onclick="toggleMic()" title="Toggle Microphone">
+        <!-- SVG Microphone ON -->
+        <svg class="icon-on" viewBox="0 0 24 24"><path fill="currentColor" d="M12,14A3,3 0 0,0 15,11V5A3,3 0 0,0 12,2A3,3 0 0,0 9,5V11A3,3 0 0,0 12,14M17.3,11C17.3,14 14.76,16.2 12,16.2C9.24,16.2 6.7,14 6.7,11H5C5,14.41 7.72,17.23 11,17.72V21H13V17.72C16.28,17.23 19,14.41 19,11H17.3Z"/></svg>
+        <!-- SVG Microphone OFF -->
+        <svg class="icon-off" viewBox="0 0 24 24"><path fill="currentColor" d="M12,4A3,3 0 0,1 15,7V11C15,11.23 14.97,11.45 14.92,11.66L17.73,14.47C18.55,13.47 19,12.3 19,11H17.3C17.3,12.32 16.76,13.43 15.96,14.25L14.5,12.8C14.82,12.3 15,11.7 15,11V7A3,3 0 0,0 12,4M12,6A1,1 0 0,1 13,7V9.8L11,7.8V7A1,1 0 0,1 12,6M19,20.73L17.73,22L14.77,19.04C13.91,19.66 12.96,20 12,20.18V23H10V20.18C6.72,19.69 4,16.87 4,13.46H5.7C5.7,16.46 8.24,18.7 11,18.7C11.83,18.7 12.62,18.5 13.34,18.12L9.24,14.03C7.45,13.9 6,12.33 6,11V7L1.11,2.11L2.39,0.83L19,17.47M12,14A3,3 0 0,1 9,11V10.8L11.8,13.6C11.25,13.86 10.63,14 10,14A3,3 0 0,1 7,11H8.7A1.3,1.3 0 0,0 10,12.3C10.57,12.3 11.08,11.96 11.25,11.45L12,12.2V14A3,3 0 0,1 12,14Z"/></svg>
+      </button>
+      <button id="videoBtn" class="control-btn" onclick="toggleVideo()" title="Toggle Camera">
+        <!-- SVG Camera ON -->
+        <svg class="icon-on" viewBox="0 0 24 24"><path fill="currentColor" d="M17,10.5V7A1,1 0 0,0 16,6H4A1,1 0 0,0 3,7V17A1,1 0 0,0 4,18H16A1,1 0 0,0 17,17V13.5L21,17.5V6.5L17,10.5Z"/></svg>
+        <!-- SVG Camera OFF -->
+        <svg class="icon-off" viewBox="0 0 24 24"><path fill="currentColor" d="M3.27,1.84L2,3.11L3.93,5.04C3.41,5.32 3,5.86 3,6.5V16.5C3,17.33 3.67,18 4.5,18H16.88L19.89,21.01L21.16,19.74L3.27,1.84M5,16.5V6.5L5.39,6.89L15,16.5H5M17,10.5L21,6.5V14.88L18.88,12.76L17,14.5V12.5V11.5V10.5V7C17,6.17 16.33,5.5 15.5,5.5H11.62L9.62,3.5H15.5C17.43,3.5 19,5.07 19,7V10.5Z"/></svg>
+      </button>
+      {% if device == 'laptop' %}
+      <button id="editorToggleBtn" class="control-btn" onclick="toggleCandidateEditor()" title="Toggle Code Editor">
+        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.4,16.6L4.8,12L9.4,7.4L8,6L2,12L8,18L9.4,16.6M14.6,16.6L19.2,12L14.6,7.4L16,6L22,12L16,18L14.6,16.6Z"/></svg>
+      </button>
+      {% endif %}
+    </div>
+
+    <!-- Status bar -->
+    <div class="status-bar">
+      <div class="status-row">
+        <span class="status-key">Camera</span>
+        <span class="status-val"><span class="dot" id="camDot"></span><span id="camStatus">—</span></span>
+      </div>
+      <div class="status-row">
+        <span class="status-key">Upload</span>
+        <span class="status-val"><span class="dot" id="uploadDot"></span><span id="uploadStatus">—</span></span>
+      </div>
+      <div class="status-row">
+        <span class="status-key">FPS</span>
+        <span class="status-val" id="fpsVal">—</span>
+      </div>
+      <div class="status-row">
+        <span class="status-key">Resolution</span>
+        <span class="status-val" id="resVal">—</span>
+      </div>
+    </div>
+
+    <div class="error-box" id="errorBox"></div>
+
+    {% if device == 'mobile' %}
+    <button class="cam-switch" id="switchBtn" onclick="switchCamera()">⇄ &nbsp; Switch Camera (front / rear)</button>
+    {% endif %}
+  </div>
+
+  {% if device == 'laptop' %}
+  <!-- Right Panel: Code Editor -->
+  <div class="right-panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.25rem; background: #18181c; border-bottom: 1px solid var(--border);">
+      <span style="font-family: var(--mono); font-size: 0.72rem; color: var(--accent); font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase;">💻 Candidate Code Editor</span>
+    </div>
+    <textarea class="editor-textarea" id="candidateTextarea" placeholder="# Type your python code here..." oninput="onCandidateCodeInput()"></textarea>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+const SESSION_ID   = "{{ session_id }}";
+const DEVICE       = "{{ device }}";
+const IS_MOBILE    = DEVICE === "mobile";
+
+// Initials Avatar
+const avInit = document.getElementById("avatarInitials");
+if (avInit) {
+  avInit.textContent = DEVICE === "laptop" ? "L" : "M";
+}
+
+const video        = document.getElementById("video");
+const overlay      = document.getElementById("overlay");
+const overlayText  = document.getElementById("overlayText");
+const camDot       = document.getElementById("camDot");
+const camStatus    = document.getElementById("camStatus");
+const uploadDot    = document.getElementById("uploadDot");
+const uploadStatus = document.getElementById("uploadStatus");
+const fpsVal       = document.getElementById("fpsVal");
+const resVal       = document.getElementById("resVal");
+const errorBox     = document.getElementById("errorBox");
+
+let currentStream   = null;
+let useFrontCamera  = true;   // mobile: start with front
+let ws = null;
+let pc = null;
+let fpsInterval = null;
+
+// Controls states
+let micEnabled      = true;
+let videoEnabled    = true;
+let micAvailable    = false;
+
+// --- Show error ---
+function showError(msg) {
+  errorBox.textContent = msg;
+  errorBox.classList.add("show");
+  overlayText.textContent = "Camera unavailable";
+  document.querySelector(".spinner").style.display = "none";
+}
+
+// --- Start camera ---
+async function startCamera(front = true) {
+  // Stop existing stream
+  if (currentStream) {
+    currentStream.getTracks().forEach(t => t.stop());
+    currentStream = null;
+  }
+
+  overlay.classList.remove("hidden");
+  overlayText.textContent = "Starting camera…";
+  document.querySelector(".spinner").style.display = "block";
+  errorBox.classList.remove("show");
+
+  // Build constraints
+  let videoConstraints;
+  if (IS_MOBILE) {
+    videoConstraints = {
+      facingMode: front ? "user" : "environment",
+      width:  { ideal: 640 },
+      height: { ideal: 480 }
+    };
+  } else {
+    videoConstraints = {
+      width:  { ideal: 1280 },
+      height: { ideal: 720 }
+    };
+  }
+
+  try {
+    let stream;
+    try {
+      // Try to request both camera and microphone
+      stream = await navigator.mediaDevices.getUserMedia({ 
+        video: videoConstraints, 
+        audio: true 
+      });
+      micAvailable = true;
+    } catch (audioErr) {
+      console.warn("Microphone access failed. Falling back to video-only.", audioErr);
+      stream = await navigator.mediaDevices.getUserMedia({ 
+        video: videoConstraints, 
+        audio: false 
+      });
+      micAvailable = false;
+      micEnabled = false;
+      
+      // Update UI for unavailable mic
+      const micBtn = document.getElementById("micBtn");
+      if (micBtn) {
+        micBtn.classList.add("muted");
+        micBtn.style.opacity = "0.5";
+        micBtn.title = "Microphone unavailable";
+      }
+    }
+
+    currentStream    = stream;
+    video.srcObject  = stream;
+
+    // Apply track states based on toggle states
+    currentStream.getVideoTracks().forEach(t => t.enabled = videoEnabled);
+    currentStream.getAudioTracks().forEach(t => t.enabled = micEnabled);
+
+    // Mirror front camera on mobile
+    if (IS_MOBILE && front) {
+      video.classList.add("front");
+    } else {
+      video.classList.remove("front");
+    }
+
+    video.onloadedmetadata = () => {
+      overlay.classList.add("hidden");
+      camDot.className = "dot live";
+      camStatus.textContent = "Active";
+      resVal.textContent = `${video.videoWidth}×${video.videoHeight}`;
+      
+      startFpsCounter();
+    };
+
+    // Establish WebSocket and WebRTC signaling
+    if (!ws) {
+      connectWebSocket();
+    } else {
+      // If we switched camera, update the track on the existing RTCPeerConnection
+      if (pc && currentStream) {
+        const videoTrack = currentStream.getVideoTracks()[0];
+        const sender = pc.getSenders().find(s => s.track && s.track.kind === "video");
+        if (sender && videoTrack) {
+          sender.replaceTrack(videoTrack);
+        }
+      }
+    }
+
+  } catch (err) {
+    let msg = "";
+    if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+      msg = "⛔ Camera permission denied. Please allow camera access in your browser settings and reload.";
+    } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+      msg = "📷 No camera found. Make sure your device has a working camera.";
+    } else if (err.name === "NotReadableError") {
+      msg = "📵 Camera is in use by another app. Close it and try again.";
+    } else if (err.name === "OverconstrainedError") {
+      if (IS_MOBILE) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+          currentStream   = stream;
+          video.srcObject = stream;
+          video.onloadedmetadata = () => {
+            overlay.classList.add("hidden");
+            camDot.className = "dot live";
+            camStatus.textContent = "Active (relaxed)";
+            resVal.textContent = `${video.videoWidth}×${video.videoHeight}`;
+            startFpsCounter();
+          };
+          if (!ws) connectWebSocket();
+          return;
+        } catch (e2) {
+          msg = "⚠️ Could not start camera: " + e2.message;
+        }
+      }
+    } else {
+      msg = "⚠️ Camera error: " + err.message;
+    }
+    camDot.className = "dot error";
+    camStatus.textContent = "Error";
+    showError(msg);
+  }
+}
+
+// --- Toggle handlers ---
+function toggleMic() {
+  if (!micAvailable) return;
+  micEnabled = !micEnabled;
+  const micBtn = document.getElementById("micBtn");
+  if (micEnabled) {
+    micBtn.classList.remove("muted");
+  } else {
+    micBtn.classList.add("muted");
+  }
+  if (currentStream) {
+    currentStream.getAudioTracks().forEach(t => t.enabled = micEnabled);
+  }
+  
+  sendStateChange();
+}
+
+function toggleVideo() {
+  videoEnabled = !videoEnabled;
+  const videoBtn = document.getElementById("videoBtn");
+  const placeholder = document.getElementById("videoMutedPlaceholder");
+  
+  if (videoEnabled) {
+    videoBtn.classList.remove("muted");
+    placeholder.style.display = "none";
+  } else {
+    videoBtn.classList.add("muted");
+    placeholder.style.display = "flex";
+  }
+  
+  if (currentStream) {
+    currentStream.getVideoTracks().forEach(t => t.enabled = videoEnabled);
+  }
+  
+  sendStateChange();
+}
+
+function sendStateChange() {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({
+      target: "dashboard",
+      type: "state_change",
+      mic_on: micEnabled,
+      video_on: videoEnabled
+    }));
+  }
+}
+
+// --- WebRTC signaling ---
+function connectWebSocket() {
+  const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const wsUrl = `${wsProtocol}//${window.location.host}/ws/${SESSION_ID}/${DEVICE}`;
+  
+  console.log("Connecting WebSocket to", wsUrl);
+  ws = new WebSocket(wsUrl);
+  
+  ws.onopen = () => {
+    console.log("WebSocket connection established");
+    uploadDot.className = "dot live";
+    uploadStatus.textContent = "Signaling Active";
+    sendStateChange();
+  };
+  
+  ws.onmessage = async (event) => {
+    const data = JSON.parse(event.data);
+    
+    switch (data.type) {
+      case "online_peers":
+        console.log("Online peers:", data.peers);
+        if (data.peers.includes("dashboard")) {
+          initiateWebRTC();
+        }
+        break;
+        
+      case "peer_status":
+        console.log("Peer status update:", data.device, data.connected);
+        if (data.device === "dashboard") {
+          if (data.connected) {
+            initiateWebRTC();
+          } else {
+            closeWebRTC();
+          }
+        }
+        break;
+        
+      case "offer":
+        if (data.sender === "dashboard") {
+          await handleOffer(data);
+        }
+        break;
+        
+      case "answer":
+        if (data.sender === "dashboard") {
+          await handleAnswer(data);
+        }
+        break;
+        
+      case "candidate":
+        if (data.sender === "dashboard") {
+          await handleCandidate(data);
+        }
+        break;
+        
+      case "state_change":
+        if (data.sender === "dashboard") {
+          updateInterviewerUI(data);
+        }
+        break;
+    }
+  };
+  
+  ws.onclose = () => {
+    console.log("WebSocket closed. Attempting reconnect...");
+    uploadDot.className = "dot error";
+    uploadStatus.textContent = "Offline";
+    closeWebRTC();
+    setTimeout(connectWebSocket, 3000);
+  };
+  
+  ws.onerror = (err) => {
+    console.error("WebSocket error:", err);
+  };
+}
+
+async function initiateWebRTC() {
+  if (pc) return; // connection already active
+  
+  console.log("Setting up RTCPeerConnection to dashboard...");
+  
+  const config = {
+    iceServers: [
+      { urls: "stun:stun.l.google.com:19302" }
+    ]
+  };
+  
+  pc = new RTCPeerConnection(config);
+  
+  if (currentStream) {
+    currentStream.getTracks().forEach(track => {
+      pc.addTrack(track, currentStream);
+    });
+  }
+  
+  pc.onicecandidate = (event) => {
+    if (event.candidate && ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        target: "dashboard",
+        type: "candidate",
+        candidate: event.candidate
+      }));
+    }
+  };
+  
+  pc.onconnectionstatechange = () => {
+    console.log("WebRTC Connection State changed to:", pc.connectionState);
+    if (pc.connectionState === "connected") {
+      uploadDot.className = "dot live";
+      uploadStatus.textContent = "Streaming (WebRTC)";
+    } else if (pc.connectionState === "failed" || pc.connectionState === "closed") {
+      uploadDot.className = "dot error";
+      uploadStatus.textContent = "Closed";
+      closeWebRTC();
+    }
+  };
+  
+  if (DEVICE === "laptop") {
+    pc.ontrack = (event) => {
+      console.log("Interviewer video track received:", event.streams[0]);
+      const interviewerVideo = document.getElementById("interviewerVideo");
+      const placeholder = document.getElementById("interviewerPlaceholder");
+      if (interviewerVideo) {
+        interviewerVideo.srcObject = event.streams[0];
+        interviewerVideo.style.display = "block";
+        interviewerVideo.play().catch(e => console.log("Play failed: ", e));
+      }
+      if (placeholder) {
+        placeholder.style.display = "none";
+      }
+      const dot = document.getElementById("interviewerDot");
+      const statusText = document.getElementById("interviewerStatusText");
+      if (dot) dot.className = "dot live";
+      if (statusText) statusText.textContent = "Live";
+    };
+  }
+  
+  try {
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    ws.send(JSON.stringify({
+      target: "dashboard",
+      type: "offer",
+      sdp: offer
+    }));
+  } catch (err) {
+    console.error("Failed to create WebRTC offer:", err);
+  }
+}
+
+async function handleAnswer(data) {
+  if (!pc) return;
+  console.log("Setting answer from dashboard");
+  try {
+    await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+  } catch (err) {
+    console.error("Failed to set remote description (answer):", err);
+  }
+}
+
+async function handleOffer(data) {
+  console.log("Setting offer from dashboard (negotiation)");
+  try {
+    if (!pc) {
+      initiateWebRTC();
+    }
+    await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    ws.send(JSON.stringify({
+      target: "dashboard",
+      type: "answer",
+      sdp: answer
+    }));
+  } catch (err) {
+    console.error("Failed to handle offer renegotiation:", err);
+  }
+}
+
+async function handleCandidate(data) {
+  if (!pc) return;
+  try {
+    await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+  } catch (err) {
+    console.error("Failed to add ICE candidate:", err);
+  }
+}
+
+function closeWebRTC() {
+  if (pc) {
+    pc.close();
+    pc = null;
+  }
+  
+  if (DEVICE === "laptop") {
+    const interviewerVideo = document.getElementById("interviewerVideo");
+    const placeholder = document.getElementById("interviewerPlaceholder");
+    if (interviewerVideo) {
+      interviewerVideo.srcObject = null;
+      interviewerVideo.style.display = "none";
+    }
+    if (placeholder) {
+      placeholder.style.display = "flex";
+      placeholder.innerHTML = `
+        <div style="font-size: 3rem; margin-bottom: 1rem;">🧑‍🏫</div>
+        <div style="font-size: 1.1rem; text-transform: uppercase; font-family: var(--mono); color: var(--muted);">Interviewer Offline</div>
+      `;
+    }
+    const dot = document.getElementById("interviewerDot");
+    const statusText = document.getElementById("interviewerStatusText");
+    const micIcon = document.getElementById("interviewerMicIcon");
+    if (dot) dot.className = "dot offline";
+    if (statusText) statusText.textContent = "Offline";
+    if (micIcon) micIcon.style.display = "none";
+  }
+}
+
+function updateInterviewerUI(data) {
+  const dot = document.getElementById("interviewerDot");
+  const statusText = document.getElementById("interviewerStatusText");
+  const micIcon = document.getElementById("interviewerMicIcon");
+  const placeholder = document.getElementById("interviewerPlaceholder");
+  const interviewerVideo = document.getElementById("interviewerVideo");
+  
+  if (dot) dot.className = "dot live";
+  
+  if (data.mic_on) {
+    if (micIcon) micIcon.style.display = "none";
+    if (statusText) statusText.textContent = "Live";
+  } else {
+    if (micIcon) {
+      micIcon.style.display = "inline";
+      micIcon.textContent = "🔇";
+    }
+    if (statusText) statusText.textContent = "Muted";
+  }
+  
+  if (data.video_on) {
+    if (interviewerVideo) interviewerVideo.style.display = "block";
+    if (placeholder) placeholder.style.display = "none";
+  } else {
+    if (interviewerVideo) interviewerVideo.style.display = "none";
+    if (placeholder) {
+      placeholder.style.display = "flex";
+      placeholder.innerHTML = `
+        <div style="font-size: 3rem; margin-bottom: 1rem;">🧑‍🏫</div>
+        <div style="font-size: 1.1rem; text-transform: uppercase; font-family: var(--mono); color: var(--error);">Camera Off</div>
+      `;
+    }
+  }
+}
+
+// --- FPS counter using requestAnimationFrame ---
+function startFpsCounter() {
+  if (fpsInterval) cancelAnimationFrame(fpsInterval);
+  
+  let frameCount = 0;
+  let lastTime = Date.now();
+  
+  function count() {
+    if (videoEnabled) {
+      frameCount++;
+      const now = Date.now();
+      if (now - lastTime >= 1000) {
+        fpsVal.textContent = frameCount + " fps";
+        frameCount = 0;
+        lastTime = now;
+      }
+    } else {
+      fpsVal.textContent = "—";
+    }
+    fpsInterval = requestAnimationFrame(count);
+  }
+  
+  fpsInterval = requestAnimationFrame(count);
+}
+
+// --- Switch camera (mobile) ---
+async function switchCamera() {
+  useFrontCamera = !useFrontCamera;
+  await startCamera(useFrontCamera);
+}
+
+// --- Boot ---
+startCamera(useFrontCamera);
+
+// --- Keep screen awake (WakeLock API) ---
+async function requestWakeLock() {
+  try {
+    if ("wakeLock" in navigator) {
+      await navigator.wakeLock.request("screen");
+    }
+  } catch (e) { /* ignore */ }
+}
+requestWakeLock();
+
+// --- Candidate split-screen code editor handlers ---
+function toggleCandidateEditor() {
+  const body = document.body;
+  const btn = document.getElementById("editorToggleBtn");
+  
+  body.classList.toggle("show-editor");
+  if (body.classList.contains("show-editor")) {
+    if (btn) btn.style.background = "var(--accent)";
+  } else {
+    if (btn) btn.style.background = "rgba(255,255,255,0.08)";
+  }
+}
+
+function onCandidateCodeInput() {
+  const textarea = document.getElementById("candidateTextarea");
+  if (!textarea || !ws || ws.readyState !== WebSocket.OPEN) return;
+  
+  ws.send(JSON.stringify({
+    target: "dashboard",
+    type: "code_sync",
+    code: textarea.value
+  }));
+}
+</script>
+</body>
+</html>

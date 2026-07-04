@@ -1,0 +1,1713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — ExamWatch {{ session_id }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --panel: #12121a;
+    --border: #1e1e2e;
+    --laptop: #5b5fff;
+    --mobile: #ff5b8d;
+    --text: #e8e8f0;
+    --muted: #6b6b8a;
+    --success: #3ddc84;
+    --error: #ff4d6d;
+    --warning: #ffb830;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    height: 100vh;
+    overflow: hidden;
+    background-image:
+      radial-gradient(ellipse at 0% 0%, rgba(91,95,255,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 100% 100%, rgba(255,91,141,0.05) 0%, transparent 50%);
+  }
+
+  /* ---- Application Wrapper ---- */
+  .app-container {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ---- Left Vertical Sidebar ---- */
+  .sidebar {
+    width: 68px;
+    height: 100vh;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 0 1rem;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .sidebar-logo {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--laptop), var(--mobile));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(91,95,255,0.3);
+    cursor: pointer;
+  }
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    flex: 1;
+  }
+  .nav-item {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .nav-item:hover, .nav-item.active {
+    background: rgba(255,255,255,0.05);
+    color: var(--text);
+  }
+  .nav-item.active {
+    color: var(--laptop);
+    border-left: 2px solid var(--laptop);
+    border-radius: 0 8px 8px 0;
+  }
+  .nav-item svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* ---- Sidebar Interviewer Camera ---- */
+  .sidebar-interviewer {
+    width: 100%;
+    padding: 0 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: auto;
+  }
+  .sidebar-interviewer .interviewer-video-wrap {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    overflow: hidden;
+    position: relative;
+    background: #000;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+  .sidebar-interviewer video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .sidebar-interviewer .interviewer-controls {
+    display: flex;
+    gap: 0.35rem;
+  }
+  .control-btn.mini {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .control-btn.mini svg {
+    width: 13px;
+    height: 13px;
+  }
+  .control-btn.mini.muted {
+    background: var(--error);
+    color: #fff;
+  }
+  .control-btn.mini:hover {
+    transform: scale(1.1);
+  }
+  .control-btn.mini .icon-off { display: none; }
+  .control-btn.mini.muted .icon-on { display: none; }
+  .control-btn.mini.muted .icon-off { display: block; }
+
+  /* ---- Right Dashboard Panel ---- */
+  .dashboard-content {
+    flex: 1;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ---- Top bar ---- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.2rem;
+    flex-shrink: 0;
+    gap: 0.75rem;
+  }
+  .brand {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  .session-chip {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    padding: 0.35rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    color: var(--muted);
+    background: var(--panel);
+  }
+  .session-chip b { color: var(--text); }
+
+  /* ---- Dashboard Grid Layout ---- */
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 50% 50%;
+    gap: 1.5rem;
+    flex: 1;
+    min-height: 0;
+    margin-bottom: 1rem;
+  }
+  @media (max-width: 1024px) {
+    .dashboard-grid {
+      grid-template-columns: 1fr;
+      overflow-y: auto;
+    }
+  }
+  .cam-column {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .questions-column {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  /* ---- Primary Camera Viewer ---- */
+  .cam-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: #000;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .feed-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    transition: border-color 0.3s;
+  }
+  .main-feed-card {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .main-feed-card .feed-img-wrap {
+    flex: 1;
+    position: relative;
+    background: #000;
+    overflow: hidden;
+  }
+
+  /* Floating PIP card styles */
+  .pip-feed-card {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    width: 160px;
+    height: 120px;
+    z-index: 10;
+    border: 2px solid var(--border);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    background: var(--panel);
+  }
+  .pip-feed-card:hover {
+    transform: scale(1.04);
+    border-color: var(--laptop);
+  }
+  .pip-feed-card .feed-img-wrap {
+    flex: 1;
+    position: relative;
+    background: #000;
+    overflow: hidden;
+  }
+  .pip-feed-card .feed-header {
+    background: rgba(18,18,26,0.9);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .feed-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .feed-title {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    font-family: var(--mono);
+    color: var(--muted);
+  }
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+  }
+  .dot.live { background: var(--success); box-shadow: 0 0 6px var(--success); animation: pulse 2s infinite; }
+  .dot.offline { background: var(--error); }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .feed-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: opacity 0.2s;
+    position: relative;
+    z-index: 1;
+  }
+  .interviewer-floating-controls {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    z-index: 100;
+    pointer-events: auto;
+  }
+  .feed-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: #000;
+  }
+  .placeholder-icon {
+    font-size: 2rem;
+    opacity: 0.2;
+  }
+  .placeholder-text {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-align: center;
+    padding: 0 0.5rem;
+    line-height: 1.4;
+  }
+  .feed-footer {
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--border);
+    background: rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
+  }
+  .feed-meta {
+    font-size: 0.65rem;
+    font-family: var(--mono);
+    color: var(--muted);
+  }
+  .last-seen { font-size: 0.65rem; color: var(--muted); font-family: var(--mono); }
+
+  /* ---- Questions Panel ---- */
+  .questions-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .questions-header {
+    padding: 0.85rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.15em;
+    color: var(--text);
+    text-transform: uppercase;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .questions-body {
+    padding: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  /* Focused Question Area */
+  .focused-question-box {
+    background: linear-gradient(135deg, rgba(91,95,255,0.06) 0%, rgba(255,91,141,0.03) 100%);
+    border: 1px solid rgba(91,95,255,0.18);
+    border-radius: 10px;
+    padding: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    position: relative;
+  }
+  .focused-topic {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .focused-text {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.4;
+  }
+  .random-btn {
+    align-self: flex-end;
+    padding: 0.45rem 1.2rem;
+    background: var(--laptop);
+    border: none;
+    border-radius: 100px;
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 10px rgba(91,95,255,0.25);
+  }
+  .random-btn:hover {
+    background: #6e72ff;
+    transform: scale(1.02);
+  }
+
+  /* Questions Cards Grid */
+  .questions-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.85rem;
+  }
+  @media (max-width: 600px) {
+    .questions-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .question-card {
+    background: rgba(255,255,255,0.01);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .question-card:hover {
+    border-color: rgba(91,95,255,0.4);
+    background: rgba(91,95,255,0.02);
+    transform: translateY(-2px);
+  }
+  .question-card.active-focus {
+    border-color: var(--laptop);
+    background: rgba(91,95,255,0.05);
+    box-shadow: 0 0 10px rgba(91,95,255,0.15);
+  }
+  .question-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .question-card-num {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--laptop);
+    font-weight: bold;
+  }
+  .question-card-action {
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .question-card-title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.35;
+  }
+  .question-card-answer {
+    font-size: 0.7rem;
+    color: var(--muted);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Note Box */
+  .note-box {
+    padding: 0.8rem 1rem;
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* ---- Activity log ---- */
+  .log-section {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .log-header {
+    padding: 0.75rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .log-body {
+    padding: 0.75rem 1.2rem;
+    max-height: 110px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 0.3rem;
+  }
+  .log-entry {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    display: flex;
+    gap: 0.75rem;
+  }
+  .log-time { flex-shrink: 0; }
+  .log-entry.info .log-msg { color: var(--text); }
+  .log-entry.warn .log-msg { color: var(--warning); }
+  .log-entry.ok   .log-msg { color: var(--success); }
+
+  /* Video muted placeholder overlay */
+  .video-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #12121a;
+    gap: 0.8rem;
+    z-index: 2;
+  }
+  .video-placeholder .avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--laptop);
+    color: #fff;
+    font-size: 1.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(91,95,255,0.2);
+  }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- Left Thin Vertical Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo">E</div>
+    <div class="sidebar-nav">
+      <div class="nav-item active" title="Dashboard">
+        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M10,20H5V14H10V20M20,20H15V11H20V20M20,9H15V4H20V9M10,12H5V4H10V12Z"/></svg>
+      </div>
+      <div class="nav-item" title="Code Editor" onclick="openCodeEditorDialog()">
+        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.4,16.6L4.8,12L9.4,7.4L8,6L2,12L8,18L9.4,16.6M14.6,16.6L19.2,12L14.6,7.4L16,6L22,12L16,18L14.6,16.6Z"/></svg>
+      </div>
+      <div class="nav-item" title="Resume PDF" onclick="openResumeDialog()">
+        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>
+      </div>
+    </div>
+    
+    <!-- Interviewer Webcam preview card -->
+    <div class="sidebar-interviewer" onclick="openInterviewerCamDialog()" style="position: relative; width: 52px; height: 52px; border-radius: 8px; overflow: hidden; margin-top: auto; margin-bottom: 1.5rem; border: 1px solid var(--border); background: #000; flex-shrink: 0; cursor: pointer;" title="Expand Interviewer Feed">
+      <video id="interviewerVideo" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover; display: block;"></video>
+      
+      <!-- Muted Overlay -->
+      <div class="video-placeholder" id="interviewerMutedPlaceholder" style="display: none; position: absolute; inset: 0; background: rgba(18,18,26,0.85); align-items: center; justify-content: center; z-index: 2;">
+        <div class="avatar" style="width: 24px; height: 24px; font-size: 0.7rem; box-shadow: none; border-radius: 50%; background: var(--laptop); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold;">I</div>
+      </div>
+
+      <div class="feed-placeholder" id="interviewerPlaceholder" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: #12121a; z-index: 1;">
+        <div style="font-size: 1rem;">🧑‍🏫</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main content column -->
+  <div class="dashboard-content">
+    
+    <!-- Top Bar header -->
+    <div class="topbar">
+      <div class="brand">
+        <h1 style="font-size: 1.1rem; font-weight:600;">Interviewer Dashboard</h1>
+        <p style="font-size: 0.72rem; color: var(--muted); font-weight:300;">Questions focus area plus live laptop and mobile camera feeds.</p>
+      </div>
+      <div style="display:flex; align-items:center; gap: 8px;">
+        <span style="font-size:0.65rem; color: var(--muted); font-family: var(--mono); white-space: nowrap;">Click any card to focus it</span>
+        <div class="session-chip">Session&nbsp; <b>{{ session_id }}</b></div>
+      </div>
+    </div>
+
+    <!-- Dashboard layout grid split -->
+    <div class="dashboard-grid">
+      
+      <!-- Left side: camera container (Laptop + docked Mobile) -->
+      <div class="cam-column">
+        <div class="cam-container">
+          
+          <!-- Main full-size camera card -->
+          <div class="feed-card main-feed-card" id="mainFeedCard">
+            <div class="feed-header">
+              <span class="feed-title" id="mainTitle" style="color:var(--laptop);">💻 Laptop Cam</span>
+              <div class="status-pill">
+                <span id="mainMicStatus" style="font-size:0.9rem; margin-right:8px; display:none;">🔇</span>
+                <span class="dot" id="mainDot"></span>
+                <span id="mainStatus">Waiting…</span>
+              </div>
+            </div>
+            <div class="feed-img-wrap">
+              <video class="feed-img" id="mainVideo" autoplay playsinline style="opacity:0; width:100%; height:100%; object-fit:cover;"></video>
+              <div class="feed-placeholder" id="mainPlaceholder">
+                <div class="placeholder-icon">🖥️</div>
+                <div class="placeholder-text">Waiting for laptop to connect…<br>Open the Laptop Link in your browser</div>
+              </div>
+              
+              <!-- Floating Interviewer Controls at bottom center of candidate feed -->
+              <div class="interviewer-floating-controls" style="position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 10;">
+                <button id="intMicBtn" class="control-btn mini muted" onclick="toggleIntMic()" title="Toggle Microphone" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border); background: #12121a; color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: all 0.2s;">
+                  <!-- SVG Microphone ON -->
+                  <svg class="icon-on" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><path fill="#3ddc84" d="M12,14A3,3 0 0,0 15,11V5A3,3 0 0,0 12,2A3,3 0 0,0 9,5V11A3,3 0 0,0 12,14M17.3,11C17.3,14 14.76,16.2 12,16.2C9.24,16.2 6.7,14 6.7,11H5C5,14.41 7.72,17.23 11,17.72V21H13V17.72C16.28,17.23 19,14.41 19,11H17.3Z"/></svg>
+                  <!-- SVG Microphone OFF -->
+                  <svg class="icon-off" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><path fill="#ff4d6d" d="M12,4A3,3 0 0,1 15,7V11C15,11.23 14.97,11.45 14.92,11.66L17.73,14.47C18.55,13.47 19,12.3 19,11H17.3C17.3,12.32 16.76,13.43 15.96,14.25L14.5,12.8C14.82,12.3 15,11.7 15,11V7A3,3 0 0,0 12,4M12,6A1,1 0 0,1 13,7V9.8L11,7.8V7A1,1 0 0,1 12,6M19,20.73L17.73,22L14.77,19.04C13.91,19.66 12.96,20 12,20.18V23H10V20.18C6.72,19.69 4,16.87 4,13.46H5.7C5.7,16.46 8.24,18.7 11,18.7C11.83,18.7 12.62,18.5 13.34,18.12L9.24,14.03C7.45,13.9 6,12.33 6,11V7L1.11,2.11L2.39,0.83L19,17.47M12,14A3,3 0 0,1 9,11V10.8L11.8,13.6C11.25,13.86 10.63,14 10,14A3,3 0 0,1 7,11H8.7A1.3,1.3 0 0,0 10,12.3C10.57,12.3 11.08,11.96 11.25,11.45L12,12.2V14A3,3 0 0,1 12,14Z"/></svg>
+                </button>
+                <button id="intVideoBtn" class="control-btn mini muted" onclick="toggleIntVideo()" title="Toggle Camera" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border); background: #12121a; color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: all 0.2s;">
+                  <!-- SVG Camera ON -->
+                  <svg class="icon-on" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><path fill="#5b5fff" d="M17,10.5V7A1,1 0 0,0 16,6H4A1,1 0 0,0 3,7V17A1,1 0 0,0 4,18H16A1,1 0 0,0 17,17V13.5L21,17.5V6.5L17,10.5Z"/></svg>
+                  <!-- SVG Camera OFF -->
+                  <svg class="icon-off" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><path fill="#ff4d6d" d="M3.27,1.84L2,3.11L3.93,5.04C3.41,5.32 3,5.86 3,6.5V16.5C3,17.33 3.67,18 4.5,18H16.88L19.89,21.01L21.16,19.74L3.27,1.84M5,16.5V6.5L5.39,6.89L15,16.5H5M17,10.5L21,6.5V14.88L18.88,12.76L17,14.5V12.5V11.5V10.5V7C17,6.17 16.33,5.5 15.5,5.5H11.62L9.62,3.5H15.5C17.43,3.5 19,5.07 19,7V10.5Z"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="feed-footer">
+              <span class="feed-meta" id="mainMeta">Laptop stream</span>
+              <span class="last-seen" id="mainLastSeen"></span>
+            </div>
+          </div>
+
+          <!-- Docked floating PIP card -->
+          <div class="feed-card pip-feed-card" id="pipFeedCard" onclick="swapFeeds()">
+            <div class="feed-header" style="padding: 0.4rem 0.8rem;">
+              <span class="feed-title" id="pipTitle" style="color:var(--mobile); font-size: 0.6rem;">📱 Mobile Cam</span>
+              <div class="status-pill" style="font-size: 0.6rem;">
+                <span id="pipMicStatus" style="font-size:0.75rem; display:none;">🔇</span>
+                <span class="dot" id="pipDot" style="width:5px; height:5px;"></span>
+                <span id="pipStatus" style="font-size: 0.55rem;">Waiting…</span>
+              </div>
+            </div>
+            <div class="feed-img-wrap">
+              <video class="feed-img" id="pipVideo" autoplay playsinline style="opacity:0; width:100%; height:100%; object-fit:cover;"></video>
+              <div class="feed-placeholder" id="pipPlaceholder" style="gap: 0.2rem;">
+                <div class="placeholder-icon" style="font-size:1.2rem;">📱</div>
+                <div class="placeholder-text" style="font-size: 0.55rem;">Tap to focus</div>
+              </div>
+            </div>
+            <div class="feed-footer" style="padding: 0.3rem 0.8rem;">
+              <span class="feed-meta" id="pipMeta" style="font-size: 0.55rem;">Tap to swap</span>
+              <span class="last-seen" id="pipLastSeen" style="font-size:0.55rem;"></span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Right side: Interview Questions panel -->
+      <div class="questions-column">
+        <div class="questions-panel">
+          <div class="questions-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <span>📁 Questions <span style="font-size: 0.6rem; color:var(--muted); font-weight:normal; margin-left:6px;">MAIN SECTION</span></span>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span id="recordTimer" style="font-family: var(--mono); font-size: 0.65rem; color: var(--muted); display: none;">00:00</span>
+              <button id="recordBtn" class="record-btn" onclick="toggleRecording()" style="display: inline-flex; align-items: center; gap: 6px; padding: 0.35rem 0.8rem; background: var(--error); color: #fff; border: none; border-radius: 6px; font-family: var(--mono); font-size: 0.65rem; cursor: pointer; transition: all 0.2s; text-transform: uppercase; font-weight: bold;">
+                <span class="record-dot" id="recordDot" style="width: 8px; height: 8px; background: #fff; border-radius: 50%; display: inline-block;"></span>
+                <span id="recordBtnText">Record Session</span>
+              </button>
+            </div>
+          </div>
+          <div class="questions-body">
+            
+            <!-- Top Focused Question Box -->
+            <div class="focused-question-box">
+              <div>
+                <span class="focused-topic" id="activeTopic">TOPIC</span>
+                <span class="focused-text" id="activeQuestion">Loading questions list...</span>
+              </div>
+              <button class="random-btn" onclick="randomizeQuestion()">Randomize</button>
+            </div>
+
+            <!-- Q1 to Q6 cards container -->
+            <div class="questions-grid" id="questionsGrid">
+              <!-- Dynamically populated in JavaScript -->
+            </div>
+
+            <!-- Inline Code Editor (Hidden by default) -->
+            <div id="inlineCodeEditor" style="display: none; flex-direction: column; background: #181824; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-top: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+              <!-- Editor Header -->
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 1rem; background: #12121a; border-bottom: 1px solid var(--border);">
+                <span style="font-family: var(--mono); font-size: 0.72rem; color: var(--accent); font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase;">💻 Synced Candidate Code</span>
+                <button onclick="closeInlineCodeEditor()" style="background: transparent; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer; transition: color 0.2s; line-height: 1; padding: 0 4px;" title="Close Editor">&times;</button>
+              </div>
+              <!-- Code Content -->
+              <div style="padding: 1rem; font-family: var(--mono); font-size: 0.85rem; line-height: 1.5; color: #abb2bf; background: #1e1e24; overflow-y: auto; height: 280px;">
+                <pre id="dashboardCodePre" style="margin: 0; padding: 0; white-space: pre-wrap; font-family: inherit; color: #abb2bf;"># Waiting for candidate to type...</pre>
+              </div>
+            </div>
+
+            <!-- Note Box -->
+            <div class="note-box" id="noteBox">
+              <strong style="color:var(--text); display:block; margin-bottom:0.2rem;">💡 Interviewer note:</strong>
+              Use the left sidebar for candidate code, resume, and job description. Click the floating camera card on the left to swap primary and secondary views. Click any question card to focus it.
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Activity Log -->
+    <div class="log-section">
+      <div class="log-header">Activity Log</div>
+      <div class="log-body" id="logBody"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const SESSION_ID = "{{ session_id }}";
+
+function timeStr() {
+  return new Date().toTimeString().slice(0, 8);
+}
+
+function log(msg, type = "info") {
+  const body  = document.getElementById("logBody");
+  if (!body) return;
+  const entry = document.createElement("div");
+  entry.className = `log-entry ${type}`;
+  entry.innerHTML = `<span class="log-time">${timeStr()}</span><span class="log-msg">${msg}</span>`;
+  body.prepend(entry);
+  while (body.children.length > 50) body.removeChild(body.lastChild);
+}
+
+// Device Swapping State variables
+let mainDevice = "laptop";
+let pipDevice = "mobile";
+
+// WebSocket and WebRTC state
+let ws = null;
+const peerConnections = { laptop: null, mobile: null };
+const clientStates = {
+  laptop: { connected: false, mic_on: true, video_on: true, stream: null },
+  mobile: { connected: false, mic_on: true, video_on: true, stream: null }
+};
+
+// Interviewer Camera & Mic handling
+let intStream = null;
+let intMicEnabled = false; // start muted
+let intVideoEnabled = false; 
+let intMicAvailable = false;
+
+function renderFeeds() {
+  updateFeedDisplay("main", mainDevice, clientStates[mainDevice]);
+  updateFeedDisplay("pip", pipDevice, clientStates[pipDevice]);
+}
+
+function updateFeedDisplay(viewType, device, state) {
+  const videoEl     = document.getElementById(`${viewType}Video`);
+  const placeholder = document.getElementById(`${viewType}Placeholder`);
+  const dot         = document.getElementById(`${viewType}Dot`);
+  const status      = document.getElementById(`${viewType}Status`);
+  const meta        = document.getElementById(`${viewType}Meta`);
+  const lastSeen    = document.getElementById(`${viewType}LastSeen`);
+  const micStatus   = document.getElementById(`${viewType}MicStatus`);
+  const titleEl     = document.getElementById(`${viewType}Title`);
+  
+  if (titleEl) {
+    if (device === "laptop") {
+      titleEl.textContent = "💻 Laptop Cam";
+      titleEl.style.color = "var(--laptop)";
+    } else {
+      titleEl.textContent = "📱 Mobile Cam";
+      titleEl.style.color = "var(--mobile)";
+    }
+  }
+
+  const isConnected = state && state.connected;
+
+  // Mic indicators
+  if (isConnected) {
+    micStatus.style.display = "inline-block";
+    if (state.mic_on) {
+      micStatus.textContent = "🎙️";
+      micStatus.title = "Microphone Active";
+      micStatus.style.color = "var(--success)";
+    } else {
+      micStatus.textContent = "🔇";
+      micStatus.title = "Microphone Muted";
+      micStatus.style.color = "var(--error)";
+    }
+  } else {
+    micStatus.style.display = "none";
+  }
+
+  // Video stream and placeholders
+  if (isConnected) {
+    if (state.video_on && state.stream) {
+      if (videoEl.srcObject !== state.stream) {
+        videoEl.srcObject = state.stream;
+      }
+      videoEl.style.opacity = "1";
+      placeholder.style.display = "none";
+      dot.className     = "dot live";
+      status.textContent = "Live";
+    } else {
+      videoEl.style.opacity = "0";
+      placeholder.style.display = "flex";
+      dot.className     = "dot live";
+      status.textContent = state.video_on ? "Connecting…" : "Camera Off";
+
+      const iconEl = placeholder.querySelector(".placeholder-icon");
+      const textEl = placeholder.querySelector(".placeholder-text");
+      if (!state.video_on) {
+        if (iconEl) iconEl.textContent = "📷❌";
+        if (textEl) textEl.innerHTML = `${device === 'laptop' ? 'Laptop' : 'Mobile'} camera turned off.`;
+      } else {
+        if (iconEl) iconEl.textContent = device === 'laptop' ? "🖥️" : "📱";
+        if (textEl) textEl.innerHTML = `Waiting for stream…`;
+      }
+    }
+  } else {
+    videoEl.srcObject = null;
+    videoEl.style.opacity = "0";
+    placeholder.style.display = "flex";
+    dot.className     = "dot offline";
+    status.textContent = "Offline";
+
+    const iconEl = placeholder.querySelector(".placeholder-icon");
+    const textEl = placeholder.querySelector(".placeholder-text");
+    if (iconEl) iconEl.textContent = device === 'laptop' ? "🖥️" : "📱";
+    if (textEl) {
+      if (viewType === "main") {
+        textEl.innerHTML = `Waiting for candidate to connect…<br>Open the link in browser`;
+      } else {
+        textEl.innerHTML = `Offline. Tap to swap`;
+      }
+    }
+  }
+
+  if (meta) {
+    meta.textContent = device === "laptop" ? "Laptop stream" : "Mobile stream";
+  }
+
+  if (lastSeen) {
+    lastSeen.textContent = isConnected ? "Live" : "";
+  }
+}
+
+function swapFeeds() {
+  const temp = mainDevice;
+  mainDevice = pipDevice;
+  pipDevice = temp;
+  
+  log(`Swapped feeds. Main is now: ${mainDevice === 'laptop' ? 'Laptop' : 'Mobile'} camera`, "info");
+  renderFeeds();
+}
+
+// --- WebSocket signaling connection ---
+function connectWebSocket() {
+  const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const wsUrl = `${wsProtocol}//${window.location.host}/ws/${SESSION_ID}/dashboard`;
+  
+  console.log("Connecting WebSocket to", wsUrl);
+  ws = new WebSocket(wsUrl);
+  
+  ws.onopen = () => {
+    log("Dashboard connection to signaling server active", "ok");
+    sendStateChangeToAll();
+  };
+  
+  ws.onmessage = async (event) => {
+    const data = JSON.parse(event.data);
+    const sender = data.sender;
+    
+    switch (data.type) {
+      case "online_peers":
+        console.log("Online peers:", data.peers);
+        data.peers.forEach(peer => {
+          if (peer === "laptop" || peer === "mobile") {
+            if (!clientStates[peer].connected) {
+              clientStates[peer].connected = true;
+              log(`${peer} connected`, "ok");
+              renderFeeds();
+            }
+          }
+        });
+        break;
+        
+      case "peer_status":
+        console.log("Peer status change:", data.device, data.connected);
+        if (data.device === "laptop" || data.device === "mobile") {
+          const prevConnected = clientStates[data.device].connected;
+          clientStates[data.device].connected = data.connected;
+          
+          if (!data.connected) {
+            clientStates[data.device].stream = null;
+            if (peerConnections[data.device]) {
+              peerConnections[data.device].close();
+              peerConnections[data.device] = null;
+            }
+            if (prevConnected) log(`${data.device} disconnected`, "warn");
+          } else {
+            if (!prevConnected) log(`${data.device} connected`, "ok");
+          }
+          renderFeeds();
+        }
+        break;
+        
+      case "offer":
+        if (sender === "laptop" || sender === "mobile") {
+          await handleOffer(sender, data);
+        }
+        break;
+        
+      case "candidate":
+        if (sender === "laptop" || sender === "mobile") {
+          await handleCandidate(sender, data);
+        }
+        break;
+        
+      case "state_change":
+        if (sender === "laptop" || sender === "mobile") {
+          clientStates[sender].mic_on = data.mic_on;
+          clientStates[sender].video_on = data.video_on;
+          renderFeeds();
+        }
+        break;
+        
+      case "code_sync":
+        if (sender === "laptop") {
+          const codePre = document.getElementById("dashboardCodePre");
+          if (codePre) {
+            codePre.textContent = data.code || "# Empty code";
+          }
+        }
+        break;
+    }
+  };
+  
+  ws.onclose = () => {
+    console.log("WebSocket disconnected. Retrying...");
+    log("Dashboard lost connection to server", "warn");
+    // Clear WebRTC connections on websocket disconnect
+    Object.keys(peerConnections).forEach(device => {
+      clientStates[device].connected = false;
+      clientStates[device].stream = null;
+      if (peerConnections[device]) {
+        peerConnections[device].close();
+        peerConnections[device] = null;
+      }
+    });
+    renderFeeds();
+    setTimeout(connectWebSocket, 3000);
+  };
+  
+  ws.onerror = (err) => {
+    console.error("WebSocket error:", err);
+  };
+}
+
+async function handleOffer(sender, data) {
+  console.log(`Received WebRTC offer from ${sender}`);
+  
+  if (peerConnections[sender]) {
+    peerConnections[sender].close();
+    peerConnections[sender] = null;
+  }
+  
+  const config = {
+    iceServers: [
+      { urls: "stun:stun.l.google.com:19302" }
+    ]
+  };
+  
+  const pc = new RTCPeerConnection(config);
+  peerConnections[sender] = pc;
+  
+  // If sender is laptop, send the Interviewer stream tracks back if interviewer is active
+  if (sender === "laptop" && intStream) {
+    intStream.getTracks().forEach(track => {
+      pc.addTrack(track, intStream);
+    });
+  }
+  
+  pc.onicecandidate = (event) => {
+    if (event.candidate && ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        target: sender,
+        type: "candidate",
+        candidate: event.candidate
+      }));
+    }
+  };
+  
+  pc.ontrack = (event) => {
+    console.log(`Received incoming stream from ${sender}:`, event.streams[0]);
+    clientStates[sender].stream = event.streams[0];
+    clientStates[sender].connected = true;
+    renderFeeds();
+  };
+  
+  pc.onconnectionstatechange = () => {
+    console.log(`Connection state with ${sender} changed to:`, pc.connectionState);
+    if (pc.connectionState === "failed" || pc.connectionState === "closed") {
+      clientStates[sender].stream = null;
+      renderFeeds();
+    }
+  };
+  
+  try {
+    await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    
+    ws.send(JSON.stringify({
+      target: sender,
+      type: "answer",
+      sdp: answer
+    }));
+  } catch (err) {
+    console.error(`Failed to negotiate WebRTC with ${sender}:`, err);
+  }
+}
+
+async function handleCandidate(sender, data) {
+  const pc = peerConnections[sender];
+  if (!pc) return;
+  try {
+    await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+  } catch (err) {
+    console.error(`Failed to add ICE candidate from ${sender}:`, err);
+  }
+}
+
+function sendStateChangeToAll() {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    // Send state change to laptop
+    ws.send(JSON.stringify({
+      target: "laptop",
+      type: "state_change",
+      mic_on: intMicEnabled,
+      video_on: intVideoEnabled
+    }));
+  }
+}
+
+// --- Interviewer Camera & Mic handling ---
+async function startInterviewer() {
+  const videoEl = document.getElementById("interviewerVideo");
+  const placeholder = document.getElementById("interviewerPlaceholder");
+  const mutePlaceholder = document.getElementById("interviewerMutedPlaceholder");
+  
+  try {
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 160, height: 160 },
+        audio: true
+      });
+      intMicAvailable = true;
+      document.getElementById("intMicBtn").style.opacity = "1";
+    } catch (e) {
+      console.warn("Interviewer requested both camera and microphone, falling back...", e);
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        intMicAvailable = true;
+        intVideoEnabled = false;
+        document.getElementById("intVideoBtn").classList.add("muted");
+      } catch (ae) {
+        console.warn("Audio-only fallback failed, trying video-only...", ae);
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: { width: 160, height: 160 } });
+          intMicAvailable = false;
+          intMicEnabled = false;
+          document.getElementById("intMicBtn").classList.add("muted");
+          document.getElementById("intMicBtn").style.opacity = "0.5";
+        } catch (ve) {
+          console.error("All interviewer media acquisition failed:", ve);
+          throw ve;
+        }
+      }
+    }
+    
+    intStream = stream;
+    if (videoEl) videoEl.srcObject = stream;
+    
+    // Enable/disable tracks based on active states
+    intStream.getVideoTracks().forEach(t => t.enabled = intVideoEnabled);
+    intStream.getAudioTracks().forEach(t => t.enabled = intMicEnabled);
+    
+    // Update preview display
+    if (videoEl) {
+      videoEl.style.display = intVideoEnabled ? "block" : "none";
+    }
+    if (placeholder) {
+      placeholder.style.display = intVideoEnabled ? "none" : "flex";
+    }
+    if (mutePlaceholder) {
+      mutePlaceholder.style.display = (intVideoEnabled && !intMicEnabled) ? "flex" : "none";
+    }
+    
+    // Add tracks to existing laptop PeerConnection
+    addInterviewerTracksToLaptop();
+    sendStateChangeToAll();
+    
+  } catch (err) {
+    console.error("Failed to start interviewer camera:", err);
+    intVideoEnabled = false;
+    intMicEnabled = false;
+    document.getElementById("intVideoBtn").classList.add("muted");
+    document.getElementById("intMicBtn").classList.add("muted");
+    if (placeholder) placeholder.style.display = "flex";
+    if (mutePlaceholder) mutePlaceholder.style.display = "none";
+  }
+}
+
+function addInterviewerTracksToLaptop() {
+  const pc = peerConnections["laptop"];
+  if (!pc || !intStream) return;
+  
+  intStream.getTracks().forEach(track => {
+    const senderExists = pc.getSenders().some(s => s.track === track);
+    if (!senderExists) {
+      pc.addTrack(track, intStream);
+    }
+  });
+  
+  renegotiateLaptop();
+}
+
+function removeInterviewerTracksFromLaptop() {
+  const pc = peerConnections["laptop"];
+  if (!pc) return;
+  
+  pc.getSenders().forEach(sender => {
+    if (sender.track) {
+      pc.removeTrack(sender);
+    }
+  });
+  
+  renegotiateLaptop();
+}
+
+async function renegotiateLaptop() {
+  const pc = peerConnections["laptop"];
+  if (!pc) return;
+  
+  console.log("Renegotiating WebRTC connection with Laptop...");
+  try {
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    ws.send(JSON.stringify({
+      target: "laptop",
+      type: "offer",
+      sdp: offer
+    }));
+  } catch (err) {
+    console.error("Renegotiation failed:", err);
+  }
+}
+
+async function toggleIntMic() {
+  intMicEnabled = !intMicEnabled;
+  const micBtn = document.getElementById("intMicBtn");
+  if (intMicEnabled) {
+    micBtn.classList.remove("muted");
+  } else {
+    micBtn.classList.add("muted");
+  }
+  
+  if (!intStream) {
+    await startInterviewer();
+  } else {
+    intStream.getAudioTracks().forEach(t => t.enabled = intMicEnabled);
+    
+    // Update mute placeholder in the small sidebar preview
+    const mutePlaceholder = document.getElementById("interviewerMutedPlaceholder");
+    if (mutePlaceholder) {
+      mutePlaceholder.style.display = (intVideoEnabled && !intMicEnabled) ? "flex" : "none";
+    }
+    
+    sendStateChangeToAll();
+  }
+}
+
+async function toggleIntVideo() {
+  intVideoEnabled = !intVideoEnabled;
+  const videoBtn = document.getElementById("intVideoBtn");
+  const placeholder = document.getElementById("interviewerPlaceholder");
+  const videoEl = document.getElementById("interviewerVideo");
+  const mutePlaceholder = document.getElementById("interviewerMutedPlaceholder");
+  
+  if (videoBtn) {
+    if (intVideoEnabled) {
+      videoBtn.classList.remove("muted");
+    } else {
+      videoBtn.classList.add("muted");
+    }
+  }
+  
+  if (!intStream) {
+    await startInterviewer();
+  } else {
+    intStream.getVideoTracks().forEach(t => t.enabled = intVideoEnabled);
+    
+    if (videoEl) videoEl.style.display = "block";
+    if (placeholder) placeholder.style.display = intVideoEnabled ? "none" : "flex";
+    if (mutePlaceholder) {
+      mutePlaceholder.style.display = (intVideoEnabled && !intMicEnabled) ? "flex" : "none";
+    }
+    
+    // Sync with expanded modal view if open
+    const modal = document.getElementById("intCamModal");
+    if (modal && modal.style.display === "flex") {
+      const modalVideo = document.getElementById("modalIntVideoPlayer");
+      const modalPlaceholder = document.getElementById("modalIntVideoPlaceholder");
+      if (intVideoEnabled && intStream) {
+        if (modalVideo) {
+          modalVideo.srcObject = intStream;
+          modalVideo.style.display = "block";
+          modalVideo.play().catch(e => console.log("Modal play failed:", e));
+        }
+        if (modalPlaceholder) modalPlaceholder.style.display = "none";
+      } else {
+        if (modalVideo) {
+          modalVideo.srcObject = null;
+          modalVideo.style.display = "none";
+        }
+        if (modalPlaceholder) modalPlaceholder.style.display = "flex";
+      }
+    }
+    
+    sendStateChangeToAll();
+  }
+}
+
+// Connect to signaling server
+connectWebSocket();
+
+// Request camera/mic tracks on startup to prepare for WebRTC
+startInterviewer();
+
+// --- Questions Section ---
+let questionsList = [];
+let focusedQuestion = null;
+
+async function loadQuestions() {
+  try {
+    const res = await fetch("/static/questions.json");
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    questionsList = await res.json();
+    renderQuestionsGrid();
+    if (questionsList.length > 0) {
+      focusQuestion(questionsList[0].id);
+    }
+  } catch (e) {
+    console.error("Failed to load questions:", e);
+    document.getElementById("activeQuestion").textContent = "Error loading questions from static/questions.json";
+  }
+}
+
+function renderQuestionsGrid() {
+  const grid = document.getElementById("questionsGrid");
+  const listToRender = questionsList.slice(0, 6);
+  
+  grid.innerHTML = listToRender.map((q, idx) => `
+    <div class="question-card" id="qCard-${q.id}" onclick="focusQuestion(${q.id})">
+      <div class="question-card-header">
+        <span class="question-card-num">Q${idx + 1}</span>
+        <span class="question-card-action">tap to focus</span>
+      </div>
+      <div class="question-card-title">${q.question}</div>
+      <div class="question-card-answer">${q.answer}</div>
+    </div>
+  `).join("");
+}
+
+function focusQuestion(id) {
+  const q = questionsList.find(item => item.id === id);
+  if (!q) return;
+  
+  focusedQuestion = q;
+  
+  document.getElementById("activeTopic").textContent = q.topic;
+  document.getElementById("activeQuestion").textContent = q.question;
+  
+  document.querySelectorAll(".question-card").forEach(el => {
+    el.classList.remove("active-focus");
+  });
+  const card = document.getElementById(`qCard-${id}`);
+  if (card) {
+    card.classList.add("active-focus");
+  }
+}
+
+function randomizeQuestion() {
+  if (questionsList.length === 0) return;
+  const randomIndex = Math.floor(Math.random() * questionsList.length);
+  const q = questionsList[randomIndex];
+  focusQuestion(q.id);
+  log(`Randomized question: Focused on ${q.topic}`, "info");
+}
+
+// Load questions on startup
+loadQuestions();
+
+// --- Media Recording Logic ---
+let mediaRecorder = null;
+let recordedChunks = [];
+let recordStartTime = 0;
+let recordTimerInterval = null;
+let isRecording = false;
+let audioCtx = null;
+let audioDest = null;
+let canvasMixElement = null;
+let canvasMixCtx = null;
+
+function toggleRecording() {
+  if (isRecording) {
+    stopRecording();
+  } else {
+    startRecording();
+  }
+}
+
+function startRecording() {
+  if (isRecording) return;
+  
+  recordedChunks = [];
+  isRecording = true;
+  
+  // Setup audio mixing
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  audioCtx = new AudioContextClass();
+  audioDest = audioCtx.createMediaStreamDestination();
+  
+  let hasAudio = false;
+  
+  if (intStream && intStream.getAudioTracks().length > 0) {
+    try {
+      const intSource = audioCtx.createMediaStreamSource(intStream);
+      intSource.connect(audioDest);
+      hasAudio = true;
+      console.log("Mixed interviewer audio");
+    } catch (e) {
+      console.warn("Could not mix interviewer audio:", e);
+    }
+  }
+  
+  const laptopState = clientStates["laptop"];
+  if (laptopState && laptopState.stream && laptopState.stream.getAudioTracks().length > 0) {
+    try {
+      const laptopSource = audioCtx.createMediaStreamSource(laptopState.stream);
+      laptopSource.connect(audioDest);
+      hasAudio = true;
+      console.log("Mixed laptop audio");
+    } catch (e) {
+      console.warn("Could not mix laptop audio:", e);
+    }
+  }
+  
+  // Setup canvas video mixer
+  canvasMixElement = document.createElement("canvas");
+  canvasMixElement.width = 1280;
+  canvasMixElement.height = 480;
+  canvasMixCtx = canvasMixElement.getContext("2d");
+  
+  // Start frame drawing loop
+  requestAnimationFrame(drawComposedFrame);
+  
+  // Capture canvas video stream
+  const videoStream = canvasMixElement.captureStream(30);
+  const combinedStream = new MediaStream();
+  
+  videoStream.getVideoTracks().forEach(t => combinedStream.addTrack(t));
+  if (hasAudio) {
+    audioDest.stream.getAudioTracks().forEach(t => combinedStream.addTrack(t));
+  }
+  
+  // Select media options
+  let options = { mimeType: "video/webm;codecs=vp9,opus" };
+  if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+    options = { mimeType: "video/webm;codecs=vp8,opus" };
+  }
+  if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+    options = { mimeType: "video/webm" };
+  }
+  
+  try {
+    mediaRecorder = new MediaRecorder(combinedStream, options);
+  } catch (err) {
+    console.error("Failed to create MediaRecorder:", err);
+    mediaRecorder = new MediaRecorder(combinedStream);
+  }
+  
+  mediaRecorder.ondataavailable = (event) => {
+    if (event.data && event.data.size > 0) {
+      recordedChunks.push(event.data);
+    }
+  };
+  
+  mediaRecorder.onstop = async () => {
+    console.log("Recording stopped. Saving blob...");
+    log("Uploading session recording...", "info");
+    
+    const blob = new Blob(recordedChunks, { type: "video/webm" });
+    const formData = new FormData();
+    formData.append("file", blob, `${SESSION_ID}.webm`);
+    
+    try {
+      const res = await fetch(`/upload_recording/${SESSION_ID}`, {
+        method: "POST",
+        body: formData
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        log(`Recording saved: ${data.filename}`, "ok");
+      } else {
+        throw new Error("HTTP " + res.status);
+      }
+    } catch (err) {
+      console.error("Failed to upload recording:", err);
+      log("Failed to save recording on server", "warn");
+    }
+  };
+  
+  // Start MediaRecorder
+  mediaRecorder.start(1000);
+  recordStartTime = Date.now();
+  
+  // Update Recording Button UI
+  const recordBtn = document.getElementById("recordBtn");
+  const recordDot = document.getElementById("recordDot");
+  const recordBtnText = document.getElementById("recordBtnText");
+  const recordTimer = document.getElementById("recordTimer");
+  
+  if (recordBtn) recordBtn.style.background = "#12121a";
+  if (recordDot) {
+    recordDot.style.background = "var(--error)";
+    recordDot.style.animation = "pulse 1s infinite";
+  }
+  if (recordBtnText) recordBtnText.textContent = "Stop";
+  if (recordTimer) {
+    recordTimer.style.display = "inline";
+    recordTimer.textContent = "00:00";
+  }
+  
+  recordTimerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - recordStartTime) / 1000);
+    const minutes = String(Math.floor(elapsed / 60)).padStart(2, "0");
+    const seconds = String(elapsed % 60).padStart(2, "0");
+    if (recordTimer) recordTimer.textContent = `${minutes}:${seconds}`;
+  }, 1000);
+  
+  log("Recording started", "info");
+}
+
+function stopRecording() {
+  if (!isRecording) return;
+  
+  isRecording = false;
+  
+  if (mediaRecorder && mediaRecorder.state !== "inactive") {
+    mediaRecorder.stop();
+  }
+  
+  if (recordTimerInterval) {
+    clearInterval(recordTimerInterval);
+    recordTimerInterval = null;
+  }
+  
+  if (audioCtx && audioCtx.state !== "closed") {
+    audioCtx.close();
+  }
+  
+  // Reset Button UI
+  const recordBtn = document.getElementById("recordBtn");
+  const recordDot = document.getElementById("recordDot");
+  const recordBtnText = document.getElementById("recordBtnText");
+  const recordTimer = document.getElementById("recordTimer");
+  
+  if (recordBtn) recordBtn.style.background = "var(--error)";
+  if (recordDot) {
+    recordDot.style.background = "#fff";
+    recordDot.style.animation = "none";
+  }
+  if (recordBtnText) recordBtnText.textContent = "Record Session";
+  if (recordTimer) recordTimer.style.display = "none";
+  
+  log("Recording stopped", "info");
+}
+
+function drawComposedFrame() {
+  if (!isRecording || !canvasMixCtx) return;
+  
+  // Background canvas fill
+  canvasMixCtx.fillStyle = "#0a0a0f";
+  canvasMixCtx.fillRect(0, 0, 1280, 480);
+  
+  let laptopVideoEl = null;
+  if (mainDevice === "laptop") {
+    laptopVideoEl = document.getElementById("mainVideo");
+  } else if (pipDevice === "laptop") {
+    laptopVideoEl = document.getElementById("pipVideo");
+  }
+  
+  const interviewerVideoEl = document.getElementById("interviewerVideo");
+  
+  // Left half: Laptop feed (Candidate)
+  const laptopState = clientStates["laptop"];
+  if (laptopState && laptopState.connected && laptopState.video_on && laptopVideoEl && laptopVideoEl.readyState >= 2) {
+    canvasMixCtx.drawImage(laptopVideoEl, 0, 0, 640, 480);
+  } else {
+    canvasMixCtx.fillStyle = "#12121a";
+    canvasMixCtx.fillRect(0, 0, 640, 480);
+    
+    canvasMixCtx.fillStyle = "#ff4d6d";
+    canvasMixCtx.font = "bold 20px 'Space Mono', monospace";
+    canvasMixCtx.textAlign = "center";
+    canvasMixCtx.fillText("LAPTOP FEED OFFLINE", 320, 240);
+  }
+  
+  // Right half: Interviewer feed
+  if (intVideoEnabled && interviewerVideoEl && interviewerVideoEl.readyState >= 2) {
+    canvasMixCtx.drawImage(interviewerVideoEl, 640, 0, 640, 480);
+  } else {
+    canvasMixCtx.fillStyle = "#12121a";
+    canvasMixCtx.fillRect(640, 0, 640, 480);
+    
+    canvasMixCtx.fillStyle = "#ff4d6d";
+    canvasMixCtx.font = "bold 20px 'Space Mono', monospace";
+    canvasMixCtx.textAlign = "center";
+    canvasMixCtx.fillText("INTERVIEWER FEED OFFLINE", 960, 240);
+  }
+  
+  requestAnimationFrame(drawComposedFrame);
+}
+
+window.addEventListener("beforeunload", stopRecording);
+
+// --- Modal Dialogs Handling ---
+function openInterviewerCamDialog() {
+  const modal = document.getElementById("intCamModal");
+  const modalVideo = document.getElementById("modalIntVideoPlayer");
+  const modalPlaceholder = document.getElementById("modalIntVideoPlaceholder");
+  
+  if (modal) {
+    modal.style.display = "flex";
+    if (intStream && intVideoEnabled) {
+      if (modalVideo) {
+        modalVideo.srcObject = intStream;
+        modalVideo.style.display = "block";
+        modalVideo.play().catch(e => console.log("Modal play failed:", e));
+      }
+      if (modalPlaceholder) modalPlaceholder.style.display = "none";
+    } else {
+      if (modalVideo) {
+        modalVideo.srcObject = null;
+        modalVideo.style.display = "none";
+      }
+      if (modalPlaceholder) modalPlaceholder.style.display = "flex";
+    }
+  }
+}
+
+function closeIntCamModal() {
+  const modal = document.getElementById("intCamModal");
+  const modalVideo = document.getElementById("modalIntVideoPlayer");
+  if (modal) {
+    modal.style.display = "none";
+  }
+  if (modalVideo) {
+    modalVideo.pause();
+    modalVideo.srcObject = null;
+  }
+}
+
+function openCodeEditorDialog() {
+  const qGrid = document.getElementById("questionsGrid");
+  const noteBox = document.getElementById("noteBox");
+  const inlineEditor = document.getElementById("inlineCodeEditor");
+  
+  if (qGrid) qGrid.style.display = "none";
+  if (noteBox) noteBox.style.display = "none";
+  if (inlineEditor) inlineEditor.style.display = "flex";
+}
+
+function closeInlineCodeEditor() {
+  const qGrid = document.getElementById("questionsGrid");
+  const noteBox = document.getElementById("noteBox");
+  const inlineEditor = document.getElementById("inlineCodeEditor");
+  
+  if (qGrid) qGrid.style.display = "grid";
+  if (noteBox) noteBox.style.display = "block";
+  if (inlineEditor) inlineEditor.style.display = "none";
+}
+
+function openResumeDialog() {
+  const modal = document.getElementById("resumeModal");
+  if (modal) modal.style.display = "flex";
+}
+
+function closeResumeModal() {
+  const modal = document.getElementById("resumeModal");
+  if (modal) modal.style.display = "none";
+}
+</script>
+
+<!-- Interviewer Camera Live Feed Modal -->
+<div id="intCamModal" style="display: none; position: fixed; inset: 0; background: rgba(10,10,15,0.85); z-index: 1000; align-items: center; justify-content: center; padding: 2rem; backdrop-filter: blur(8px);">
+  <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 640px; overflow: hidden; display: flex; flex-direction: column; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);">
+      <span style="font-family: var(--mono); font-size: 0.85rem; color: var(--text); font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase;">🧑‍🏫 Interviewer Live Feed</span>
+      <button onclick="closeIntCamModal()" style="background: transparent; border: none; color: var(--muted); font-size: 1.5rem; cursor: pointer; transition: color 0.2s; line-height: 1;">&times;</button>
+    </div>
+    <div style="aspect-ratio: 4/3; background: #000; width: 100%; position: relative;">
+      <video id="modalIntVideoPlayer" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover;"></video>
+      <div id="modalIntVideoPlaceholder" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #12121a;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">🧑‍🏫</div>
+        <div style="font-size: 1rem; font-family: var(--mono); color: var(--muted);">Interviewer Feed Offline</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- Resume PDF Modal -->
+<div id="resumeModal" style="display: none; position: fixed; inset: 0; background: rgba(10,10,15,0.85); z-index: 1000; align-items: center; justify-content: center; padding: 2rem; backdrop-filter: blur(8px);">
+  <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 800px; height: 85vh; overflow: hidden; display: flex; flex-direction: column; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);">
+      <span style="font-family: var(--mono); font-size: 0.85rem; color: var(--text); font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase;">📄 Candidate Resume Viewer</span>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <button id="genQuestionBtn" style="background: linear-gradient(135deg, #3ddc84 0%, #90e0ef 100%); border: none; border-radius: 8px; color: #0a0a0f; font-family: var(--mono); font-size: 0.72rem; font-weight: 700; padding: 0.5rem 1rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); text-transform: uppercase; letter-spacing: 0.08em; box-shadow: 0 4px 15px rgba(61,220,132,0.25);" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 20px rgba(61,220,132,0.45)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 15px rgba(61,220,132,0.25)';" onclick="alert('Question Generation Triggered!')">
+          <svg viewBox="0 0 24 24" style="width: 13px; height: 13px; fill: #0a0a0f;"><path d="M7.5,2L9,5.5L12.5,7L9,8.5L7.5,12L6,8.5L2.5,7L6,5.5L7.5,2M17.5,13L19,16.5L22.5,18L19,19.5L17.5,23L16,19.5L12.5,18L16,16.5L17.5,13M19,2.5L20,5L22.5,6L20,7L19,9.5L18,7L15.5,6L18,5L19,2.5Z"/></svg>
+          Generate Questions
+        </button>
+        <button onclick="closeResumeModal()" style="background: transparent; border: none; color: var(--muted); font-size: 1.5rem; cursor: pointer; transition: color 0.2s; line-height: 1; padding: 0 4px;">&times;</button>
+      </div>
+    </div>
+    <div style="flex: 1; width: 100%; background: #2d2d34;">
+      <iframe src="/sample/resume.pdf" style="width: 100%; height: 100%; border: none;"></iframe>
+    </div>
+  </div>
+</div>
+</body>
+</html>

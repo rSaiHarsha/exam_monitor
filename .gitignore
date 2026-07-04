@@ -1,0 +1,57 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+active_env/
+
+# IDE / Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw*
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+
+# SSL Certificates (Should not be in Git)
+key.pem
+cert.pem
+
+# Local recordings folder (dynamically created)
+recordings/

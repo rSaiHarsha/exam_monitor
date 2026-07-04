@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "topic": "Constructor",
+    "question": "What is the role of a constructor in a class?",
+    "answer": "A constructor initializes an object when it is created and sets its initial state."
+  },
+  {
+    "id": 2,
+    "topic": "Encapsulation",
+    "question": "What is encapsulation and why is it useful in OOP?",
+    "answer": "Encapsulation bundles data and methods together and hides internal state behind a controlled interface."
+  },
+  {
+    "id": 3,
+    "topic": "Static Keyword",
+    "question": "What is the purpose of the static keyword in a class?",
+    "answer": "Static members belong to the class itself rather than to each object instance."
+  },
+  {
+    "id": 4,
+    "topic": "Polymorphism",
+    "question": "Explain polymorphism with a practical example.",
+    "answer": "Polymorphism lets one interface work with many forms, such as method overriding in child classes."
+  },
+  {
+    "id": 5,
+    "topic": "OOP Relations",
+    "question": "What is the difference between association, aggregation, and composition?",
+    "answer": "Association is a general relationship; aggregation is a weak 'has-a'; composition is a strong ownership relationship."
+  },
+  {
+    "id": 6,
+    "topic": "Interfaces",
+    "question": "Why do interfaces matter in design?",
+    "answer": "Interfaces define a contract so code can depend on behavior rather than implementation."
+  },
+  {
+    "id": 7,
+    "topic": "Abstract Classes",
+    "question": "What is the difference between an abstract class and an interface?",
+    "answer": "Abstract classes can have state and default implementations; interfaces only define a contract of behavior (though modern standards allow default methods)."
+  },
+  {
+    "id": 8,
+    "topic": "Inheritance",
+    "question": "When should you prefer composition over inheritance?",
+    "answer": "Prefer composition when relationships are dynamic, or when you want to avoid tight coupling and class hierarchy explosion."
+  },
+  {
+    "id": 9,
+    "topic": "Garbage Collection",
+    "question": "How does automatic memory management / garbage collection work?",
+    "answer": "It automatically identifies and reclaims memory that is no longer reachable or referenced by the program, preventing memory leaks."
+  },
+  {
+    "id": 10,
+    "topic": "Method Overloading",
+    "question": "What is the difference between method overloading and method overriding?",
+    "answer": "Overloading defines multiple methods with the same name but different signatures in a class; overriding redefines a parent class method in a child class."
+  }
+]

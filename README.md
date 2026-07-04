@@ -5,7 +5,7 @@ A fixed, production-quality POC for simultaneous laptop + mobile camera proctori
 ## Quick Start
 
 ```bash
-pip install flask flask-cors
+pip install -r requiremnts
 python app.py
 ```
 

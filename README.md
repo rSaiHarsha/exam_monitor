@@ -5,7 +5,7 @@ A fixed, production-quality POC for simultaneous laptop + mobile camera proctori
 ## Quick Start
 
 ```bash
-pip install -r requiremnts
+pip install -r requirements.txt
 python app.py
 ```
 

@@ -515,9 +515,31 @@
   <!-- Right Panel: Code Editor -->
   <div class="right-panel">
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.25rem; background: #18181c; border-bottom: 1px solid var(--border);">
-      <span style="font-family: var(--mono); font-size: 0.72rem; color: var(--accent); font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase;">💻 Candidate Code Editor</span>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-family: var(--mono); font-size: 0.72rem; color: var(--accent); font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase;">💻 Code Editor</span>
+        <select id="editorLanguageSelect" onchange="onLanguageChange()" style="background: #12121a; border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: var(--mono); font-size: 0.65rem; padding: 0.2rem 0.4rem; outline: none; cursor: pointer;">
+          <option value="71">Python 3</option>
+          <option value="91">Java</option>
+        </select>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button id="runCodeBtn" onclick="executeCode()" style="background: linear-gradient(135deg, #3ddc84 0%, #90e0ef 100%); border: none; border-radius: 6px; color: #0a0a0f; font-family: var(--mono); font-size: 0.65rem; font-weight: bold; padding: 0.35rem 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s; text-transform: uppercase;">
+          <svg viewBox="0 0 24 24" style="width: 10px; height: 10px; fill: #0a0a0f;"><path d="M8,5.14V19.14L19,12.14L8,5.14Z"/></svg>
+          <span id="runCodeBtnText">Run Code</span>
+        </button>
+        <button onclick="toggleCandidateEditor()" style="background: transparent; border: none; color: var(--muted); font-size: 1.3rem; cursor: pointer; transition: color 0.2s; line-height: 1; padding: 0 4px;" title="Close Editor">&times;</button>
+      </div>
     </div>
-    <textarea class="editor-textarea" id="candidateTextarea" placeholder="# Type your python code here..." oninput="onCandidateCodeInput()"></textarea>
+    <textarea class="editor-textarea" id="candidateTextarea" placeholder="# Type your code here..." oninput="onCandidateCodeInput()"># Type your python code here...&#10;print("Hello, World!")&#10;</textarea>
+    
+    <!-- Code Execution Output Console -->
+    <div id="candidateConsole" style="height: 180px; border-top: 1px solid var(--border); background: #0c0c12; display: flex; flex-direction: column; font-family: var(--mono); overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 1rem; background: #0e0e17; font-size: 0.65rem; color: var(--muted); border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0;">
+        <span>Console Output</span>
+        <button onclick="clearConsole()" style="background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 0.65rem; text-transform: uppercase;">Clear</button>
+      </div>
+      <div id="candidateConsoleBody" style="flex: 1; padding: 0.8rem 1rem; overflow-y: auto; font-size: 0.78rem; line-height: 1.4; color: #abb2bf; white-space: pre-wrap;"># Click 'Run Code' to execute your script...</div>
+    </div>
   </div>
   {% endif %}
 </div>
@@ -756,6 +778,14 @@ function connectWebSocket() {
   
   ws.onmessage = async (event) => {
     const data = JSON.parse(event.data);
+    
+    if (data.type === "error" && data.message && (data.message.includes("expired") || data.message.includes("inactive"))) {
+      ws.onclose = null;
+      ws.close();
+      alert("This proctoring session is no longer active. Redirecting to home page.");
+      window.location.href = "/";
+      return;
+    }
     
     switch (data.type) {
       case "online_peers":
@@ -1050,14 +1080,209 @@ function toggleCandidateEditor() {
 
 function onCandidateCodeInput() {
   const textarea = document.getElementById("candidateTextarea");
+  const select = document.getElementById("editorLanguageSelect");
   if (!textarea || !ws || ws.readyState !== WebSocket.OPEN) return;
   
   ws.send(JSON.stringify({
     target: "dashboard",
     type: "code_sync",
-    code: textarea.value
+    code: textarea.value,
+    language_id: select ? select.value : "71"
   }));
 }
+
+const STARTER_CODE = {
+  "71": `# Type your python code here...\nprint("Hello, World!")\n`,
+  "91": `public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello from Java JDK 17!");\n    }\n}\n`
+};
+
+function onLanguageChange() {
+  const select = document.getElementById("editorLanguageSelect");
+  const textarea = document.getElementById("candidateTextarea");
+  if (!select || !textarea) return;
+  
+  const val = select.value;
+  const currentVal = textarea.value.trim();
+  
+  if (!currentVal || currentVal === STARTER_CODE["71"].trim() || currentVal === STARTER_CODE["91"].trim() || currentVal.startsWith("# Type your python") || currentVal.startsWith("public class Main")) {
+    textarea.value = STARTER_CODE[val];
+    onCandidateCodeInput();
+  }
+}
+
+async function executeCode() {
+  const btn = document.getElementById("runCodeBtn");
+  const textSpan = document.getElementById("runCodeBtnText");
+  const consoleBody = document.getElementById("candidateConsoleBody");
+  const textarea = document.getElementById("candidateTextarea");
+  const select = document.getElementById("editorLanguageSelect");
+  
+  if (!btn || !textSpan || !consoleBody || !textarea) return;
+  
+  const code = textarea.value.trim();
+  if (!code) {
+    consoleBody.innerHTML = `<span style="color: var(--error);">Error: Code is empty.</span>`;
+    return;
+  }
+  
+  btn.disabled = true;
+  const oldBackground = btn.style.background;
+  btn.style.background = "var(--muted)";
+  textSpan.textContent = "Running...";
+  consoleBody.innerHTML = `<span style="color: var(--accent);">Running code on Judge0 CE...</span>`;
+  
+  const langId = select ? parseInt(select.value) : 71;
+  
+  try {
+    const res = await fetch(`/execute_code/${SESSION_ID}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: textarea.value, language_id: langId })
+    });
+    
+    if (!res.ok) throw new Error("HTTP error " + res.status);
+    const data = await res.json();
+    
+    let html = "";
+    const statusDesc = data.status ? data.status.description : "Accepted";
+    const statusId = data.status ? data.status.id : 3;
+    
+    if (statusId !== 3) {
+      html += `<span style="color: var(--error); font-weight: bold;">Status: ${statusDesc}</span>\n`;
+    }
+    
+    if (data.compile_output) {
+      html += `<span style="color: var(--error);">${escapeHtml(data.compile_output)}</span>\n`;
+    }
+    if (data.stdout) {
+      html += `<span style="color: var(--success);">${escapeHtml(data.stdout)}</span>`;
+    }
+    if (data.stderr) {
+      html += `<span style="color: var(--error);">${escapeHtml(data.stderr)}</span>`;
+    }
+    if (data.message) {
+      html += `<span style="color: var(--muted);">${escapeHtml(data.message)}</span>\n`;
+    }
+    
+    if (!data.stdout && !data.stderr && !data.compile_output && !data.message) {
+      html += `<span style="color: var(--muted);">Execution finished with no output (Exit Code: ${statusId}).</span>`;
+    }
+    
+    consoleBody.innerHTML = html;
+  } catch (e) {
+    console.error("Execution failed:", e);
+    consoleBody.innerHTML = `<span style="color: var(--error);">Error: Execution request failed. (${e.message})</span>`;
+  } finally {
+    btn.disabled = false;
+    btn.style.background = oldBackground;
+    textSpan.textContent = "Run Code";
+  }
+}
+
+function clearConsole() {
+  const body = document.getElementById("candidateConsoleBody");
+  if (body) body.innerHTML = `<span style="color: var(--muted);"># Console cleared.</span>`;
+}
+
+function escapeHtml(text) {
+  if (!text) return "";
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+
+// --- Session Expiration Warning & Close Logic ---
+const EXPIRES_AT = {{ expires_at }};
+let warningShown = false;
+let sessionEnded = false;
+
+function checkSessionExpiration() {
+  if (sessionEnded) return;
+  
+  const now = Date.now() / 1000;
+  const remainingSecs = Math.max(0, Math.floor(EXPIRES_AT - now));
+  
+  // Warn candidate 15 seconds before ending
+  if (remainingSecs <= 15 && remainingSecs > 0 && !warningShown) {
+    warningShown = true;
+    const alertEl = document.getElementById("sessionEndAlert");
+    if (alertEl) {
+      alertEl.style.display = "flex";
+    }
+  }
+  
+  // Update countdown display
+  const countEl = document.getElementById("alertCountdown");
+  if (countEl && warningShown) {
+    countEl.textContent = remainingSecs;
+  }
+  
+  if (remainingSecs <= 0) {
+    sessionEnded = true;
+    
+    // Hide warning
+    const alertEl = document.getElementById("sessionEndAlert");
+    if (alertEl) alertEl.style.display = "none";
+    
+    // Stop local camera stream tracks
+    if (window.currentStream) {
+      try {
+        window.currentStream.getTracks().forEach(track => track.stop());
+      } catch (e) {}
+    }
+    
+    // Stop WebRTC PeerConnection
+    try {
+      if (typeof closeWebRTC === "function") {
+        closeWebRTC();
+      } else if (window.pc) {
+        window.pc.close();
+        window.pc = null;
+      }
+    } catch (e) {}
+    
+    // Close WebSocket
+    try {
+      if (window.ws) {
+        window.ws.onclose = null; // prevent reconnect attempts
+        window.ws.close();
+      }
+    } catch (e) {}
+    
+    alert("This proctoring session has ended. Redirecting to home page.");
+    window.location.href = "/";
+  }
+}
+
+// Run checker every second
+setInterval(checkSessionExpiration, 1000);
 </script>
+
+<!-- Session End Warning Overlay -->
+<div id="sessionEndAlert" style="display: none; position: fixed; inset: 0; background: rgba(10,10,15,0.9); z-index: 9999; align-items: center; justify-content: center; padding: 2rem; backdrop-filter: blur(8px);">
+  <div style="background: var(--panel); border: 2px solid var(--error); border-radius: 16px; width: 100%; max-width: 440px; padding: 2rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; text-align: center; box-shadow: 0 10px 30px rgba(255,77,109,0.25);">
+    <div style="font-size: 3rem;">⚠️</div>
+    <h2 style="font-family: var(--mono); font-size: 1.2rem; color: var(--error); font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em;">Session Ending Soon</h2>
+    <p style="font-size: 0.9rem; color: var(--text); line-height: 1.5;">This proctoring session is about to end in <span id="alertCountdown" style="font-weight: bold; color: var(--error); font-family: var(--mono);">15</span> seconds. Please wrap up.</p>
+    <button onclick="document.getElementById('sessionEndAlert').style.display='none'" style="margin-top: 1rem; padding: 0.6rem 1.5rem; background: var(--accent); border: none; border-radius: 8px; color: #fff; font-family: var(--mono); font-size: 0.75rem; text-transform: uppercase; cursor: pointer;">Dismiss</button>
+  </div>
+</div>
+
+<!-- Session Ended Overlay Modal -->
+<div id="sessionEndedModal" style="display: none; position: fixed; inset: 0; background: rgba(10,10,15,0.95); z-index: 10000; align-items: center; justify-content: center; padding: 2rem; backdrop-filter: blur(10px);">
+  <div style="background: var(--panel); border: 2px solid var(--border); border-radius: 16px; width: 100%; max-width: 440px; padding: 2.5rem 2rem; display: flex; flex-direction: column; align-items: center; gap: 1.2rem; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    <div style="font-size: 3.5rem;">🔒</div>
+    <h2 style="font-family: var(--mono); font-size: 1.4rem; color: var(--muted); font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em;">Session Ended</h2>
+    <p style="font-size: 0.9rem; color: var(--muted); line-height: 1.5;">This session has reached its scheduled limit and is now closed. All camera feeds, microphone inputs, and socket connections have been stopped.</p>
+    <div style="font-size: 0.75rem; color: var(--muted); background: rgba(255,255,255,0.02); padding: 0.8rem; border-radius: 6px; border: 1px dashed var(--border); width: 100%;">
+      As long as you do not refresh this page, you can review your final code.
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

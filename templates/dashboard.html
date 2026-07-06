@@ -612,6 +612,9 @@
       <div class="nav-item" title="Resume PDF" onclick="openResumeDialog()">
         <svg viewBox="0 0 24 24"><path fill="currentColor" d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>
       </div>
+      <div class="nav-item" title="Job Description" onclick="openJobDescriptionDialog()">
+        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M19,3H14.82C14.4,1.84 13.3,1 12,1C10.7,1 9.6,1.84 9.18,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M12,3A1,1 0 0,1 13,4A1,1 0 0,1 12,5A1,1 0 0,1 11,4A1,1 0 0,1 12,3M14,17H7V15H14V17M17,13H7V11H17V13M17,9H7V7H17V9Z"/></svg>
+      </div>
     </div>
     
     <!-- Interviewer Webcam preview card -->
@@ -641,6 +644,9 @@
       <div style="display:flex; align-items:center; gap: 8px;">
         <span style="font-size:0.65rem; color: var(--muted); font-family: var(--mono); white-space: nowrap;">Click any card to focus it</span>
         <div class="session-chip">Session&nbsp; <b>{{ session_id }}</b></div>
+        <button onclick="endSessionDashboard()" style="background: rgba(255, 77, 109, 0.15); border: 1px solid var(--error); border-radius: 6px; color: var(--error); font-family: var(--mono); font-size: 0.65rem; font-weight: bold; padding: 0.4rem 0.8rem; cursor: pointer; transition: all 0.2s; text-transform: uppercase;">
+          End Session
+        </button>
       </div>
     </div>
 
@@ -722,6 +728,10 @@
           <div class="questions-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
             <span>📁 Questions <span style="font-size: 0.6rem; color:var(--muted); font-weight:normal; margin-left:6px;">MAIN SECTION</span></span>
             <div style="display: flex; align-items: center; gap: 10px;">
+              <button id="genQuestionsBtn" onclick="generateQuestions()" style="background: linear-gradient(135deg, #3ddc84 0%, #90e0ef 100%); border: none; border-radius: 6px; color: #0a0a0f; font-family: var(--mono); font-size: 0.65rem; font-weight: bold; padding: 0.35rem 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s; text-transform: uppercase; box-shadow: 0 4px 12px rgba(61,220,132,0.25);">
+                <svg viewBox="0 0 24 24" style="width: 11px; height: 11px; fill: #0a0a0f;"><path d="M7.5,2L9,5.5L12.5,7L9,8.5L7.5,12L6,8.5L2.5,7L6,5.5L7.5,2M17.5,13L19,16.5L22.5,18L19,19.5L17.5,23L16,19.5L12.5,18L16,16.5L17.5,13M19,2.5L20,5L22.5,6L20,7L19,9.5L18,7L15.5,6L18,5L19,2.5Z"/></svg>
+                <span id="genQuestionsText">Generate</span>
+              </button>
               <span id="recordTimer" style="font-family: var(--mono); font-size: 0.65rem; color: var(--muted); display: none;">00:00</span>
               <button id="recordBtn" class="record-btn" onclick="toggleRecording()" style="display: inline-flex; align-items: center; gap: 6px; padding: 0.35rem 0.8rem; background: var(--error); color: #fff; border: none; border-radius: 6px; font-family: var(--mono); font-size: 0.65rem; cursor: pointer; transition: all 0.2s; text-transform: uppercase; font-weight: bold;">
                 <span class="record-dot" id="recordDot" style="width: 8px; height: 8px; background: #fff; border-radius: 50%; display: inline-block;"></span>
@@ -749,12 +759,24 @@
             <div id="inlineCodeEditor" style="display: none; flex-direction: column; background: #181824; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-top: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
               <!-- Editor Header -->
               <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 1rem; background: #12121a; border-bottom: 1px solid var(--border);">
-                <span style="font-family: var(--mono); font-size: 0.72rem; color: var(--accent); font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase;">💻 Synced Candidate Code</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-family: var(--mono); font-size: 0.72rem; color: var(--accent); font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase;">💻 Synced Candidate Code</span>
+                  <span id="dashboardCodeLang" style="background: rgba(91, 95, 255, 0.15); border: 1px solid var(--border); border-radius: 4px; color: var(--accent); font-family: var(--mono); font-size: 0.55rem; padding: 0.15rem 0.4rem; text-transform: uppercase; font-weight: bold;">PYTHON 3</span>
+                </div>
                 <button onclick="closeInlineCodeEditor()" style="background: transparent; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer; transition: color 0.2s; line-height: 1; padding: 0 4px;" title="Close Editor">&times;</button>
               </div>
               <!-- Code Content -->
-              <div style="padding: 1rem; font-family: var(--mono); font-size: 0.85rem; line-height: 1.5; color: #abb2bf; background: #1e1e24; overflow-y: auto; height: 280px;">
+              <div style="padding: 1rem; font-family: var(--mono); font-size: 0.85rem; line-height: 1.5; color: #abb2bf; background: #1e1e24; overflow-y: auto; height: 280px; border-bottom: 1px solid var(--border);">
                 <pre id="dashboardCodePre" style="margin: 0; padding: 0; white-space: pre-wrap; font-family: inherit; color: #abb2bf;"># Waiting for candidate to type...</pre>
+              </div>
+              
+              <!-- Sync Console Output for Interviewer -->
+              <div style="background: #0c0c12; display: flex; flex-direction: column; font-family: var(--mono); overflow: hidden;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 1rem; background: #0e0e17; font-size: 0.65rem; color: var(--muted); border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0;">
+                  <span>Candidate Execution Output</span>
+                  <span id="dashboardConsoleStatus" style="font-weight: bold; color: var(--muted); font-size: 0.6rem; font-family: var(--mono);">IDLE</span>
+                </div>
+                <div id="dashboardConsoleBody" style="padding: 0.8rem 1rem; overflow-y: auto; font-size: 0.78rem; line-height: 1.4; color: #abb2bf; white-space: pre-wrap; height: 120px;"># No executions run yet...</div>
               </div>
             </div>
 
@@ -782,8 +804,57 @@
 <script>
 const SESSION_ID = "{{ session_id }}";
 
+async function endSessionDashboard() {
+  console.log("[endSessionDashboard] button clicked");
+  showEndSessionConfirmModal();
+}
+
+function showEndSessionConfirmModal() {
+  const modal = document.getElementById("endSessionConfirmModal");
+  if (modal) modal.style.display = "flex";
+}
+
+function closeEndSessionConfirmModal() {
+  const modal = document.getElementById("endSessionConfirmModal");
+  if (modal) modal.style.display = "none";
+}
+
+async function confirmEndSession() {
+  closeEndSessionConfirmModal();
+  try {
+    console.log("[endSessionDashboard] sending POST to", `/end_session/${SESSION_ID}`);
+    const res = await fetch(`/end_session/${SESSION_ID}`, { method: "POST" });
+    console.log("[endSessionDashboard] response status:", res.status);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    console.log("[endSessionDashboard] response body:", data);
+
+    log("Session ended by interviewer", "warn");
+
+    if (window.ws) {
+      window.ws.onclose = null;
+      window.ws.close();
+    }
+    alert("This proctoring session has been ended. Redirecting to home page.");
+    window.location.href = "/";
+  } catch (e) {
+    console.error("[endSessionDashboard] Failed to end session:", e);
+    alert("Failed to end session: " + e.message);
+  }
+}
+
 function timeStr() {
   return new Date().toTimeString().slice(0, 8);
+}
+
+function escapeHtml(text) {
+  if (!text) return "";
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 function log(msg, type = "info") {
@@ -937,6 +1008,14 @@ function connectWebSocket() {
     const data = JSON.parse(event.data);
     const sender = data.sender;
     
+    if (data.type === "error" && data.message && (data.message.includes("expired") || data.message.includes("inactive"))) {
+      ws.onclose = null;
+      ws.close();
+      alert("This session is no longer active. Redirecting to home page.");
+      window.location.href = "/";
+      return;
+    }
+    
     switch (data.type) {
       case "online_peers":
         console.log("Online peers:", data.peers);
@@ -998,6 +1077,41 @@ function connectWebSocket() {
             codePre.textContent = data.code || "# Empty code";
           }
         }
+        break;
+        
+      case "code_execution":
+        const dashConsoleBody = document.getElementById("dashboardConsoleBody");
+        const dashStatusEl = document.getElementById("dashboardConsoleStatus");
+        if (dashConsoleBody && dashStatusEl) {
+          let html = "";
+          if (data.status_id !== 3) {
+            html += `<span style="color: var(--error); font-weight: bold;">Status: ${data.status_desc}</span>\n`;
+            dashStatusEl.style.color = "var(--error)";
+          } else {
+            dashStatusEl.style.color = "var(--success)";
+          }
+          dashStatusEl.textContent = data.status_desc.toUpperCase();
+          
+          if (data.compile_output) {
+            html += `<span style="color: var(--error);">${escapeHtml(data.compile_output)}</span>\n`;
+          }
+          if (data.stdout) {
+            html += `<span style="color: var(--success);">${escapeHtml(data.stdout)}</span>`;
+          }
+          if (data.stderr) {
+            html += `<span style="color: var(--error);">${escapeHtml(data.stderr)}</span>`;
+          }
+          if (data.message) {
+            html += `<span style="color: var(--muted);">${escapeHtml(data.message)}</span>\n`;
+          }
+          
+          if (!data.stdout && !data.stderr && !data.compile_output && !data.message) {
+            html += `<span style="color: var(--muted);">Execution finished with no output.</span>`;
+          }
+          
+          dashConsoleBody.innerHTML = html;
+        }
+        log(`Candidate executed code (Status: ${data.status_desc})`, data.status_id === 3 ? "ok" : "warn");
         break;
     }
   };
@@ -1311,7 +1425,7 @@ let focusedQuestion = null;
 
 async function loadQuestions() {
   try {
-    const res = await fetch("/static/questions.json");
+    const res = await fetch(`/get_questions/${SESSION_ID}`);
     if (!res.ok) throw new Error("HTTP " + res.status);
     questionsList = await res.json();
     renderQuestionsGrid();
@@ -1320,7 +1434,40 @@ async function loadQuestions() {
     }
   } catch (e) {
     console.error("Failed to load questions:", e);
-    document.getElementById("activeQuestion").textContent = "Error loading questions from static/questions.json";
+    document.getElementById("activeQuestion").textContent = "Error loading questions for session " + SESSION_ID;
+  }
+}
+
+async function generateQuestions() {
+  const btn = document.getElementById("genQuestionsBtn");
+  const textSpan = document.getElementById("genQuestionsText");
+  if (!btn || !textSpan) return;
+  
+  btn.disabled = true;
+  const oldBackground = btn.style.background;
+  btn.style.background = "var(--muted)";
+  textSpan.textContent = "Generating...";
+  log("Requesting LLM question generation...", "info");
+  
+  try {
+    const res = await fetch(`/generate_questions/${SESSION_ID}`, { method: "POST" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    
+    questionsList = data;
+    renderQuestionsGrid();
+    if (questionsList.length > 0) {
+      focusQuestion(questionsList[0].id);
+    }
+    log(`Successfully generated ${questionsList.length} questions matching JD and Resume`, "ok");
+  } catch (e) {
+    console.error("Failed to generate questions:", e);
+    log("Failed to generate questions from LLM", "warn");
+    alert("Failed to generate questions. Make sure your LLM API key is valid.");
+  } finally {
+    btn.disabled = false;
+    btn.style.background = oldBackground;
+    textSpan.textContent = "Generate";
   }
 }
 
@@ -1670,7 +1817,146 @@ function closeResumeModal() {
   const modal = document.getElementById("resumeModal");
   if (modal) modal.style.display = "none";
 }
+
+let jdLoaded = false;
+
+async function openJobDescriptionDialog() {
+  const modal = document.getElementById("jobDescriptionModal");
+  if (modal) modal.style.display = "flex";
+  
+  if (!jdLoaded) {
+    try {
+      const res = await fetch("/sample/job_description.json");
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      
+      document.getElementById("jdRole").textContent = data.role || "Role";
+      document.getElementById("jdExp").textContent = `Experience: ${data.experience || "N/A"}`;
+      document.getElementById("jdLoc").textContent = `Location: ${data.location || "N/A"}`;
+      document.getElementById("jdDesc").textContent = data.description || "";
+      
+      const reqsContainer = document.getElementById("jdReqs");
+      reqsContainer.innerHTML = (data.requirements || []).map(r => `<li>${r}</li>`).join("");
+      
+      const respsContainer = document.getElementById("jdResps");
+      respsContainer.innerHTML = (data.responsibilities || []).map(r => `<li>${r}</li>`).join("");
+      
+      document.getElementById("jdLoading").style.display = "none";
+      document.getElementById("jdContent").style.display = "flex";
+      jdLoaded = true;
+    } catch (e) {
+      console.error("Failed to load job description:", e);
+      document.getElementById("jdLoading").textContent = "Error loading job description from sample/job_description.json";
+    }
+  }
+}
+
+function closeJobDescriptionModal() {
+  const modal = document.getElementById("jobDescriptionModal");
+  if (modal) modal.style.display = "none";
+}
+
+// --- Session Expiration Warning & Close Logic ---
+const EXPIRES_AT = {{ expires_at }};
+let warningShown = false;
+let sessionEnded = false;
+
+function checkSessionExpiration() {
+  if (sessionEnded) return;
+  
+  const now = Date.now() / 1000;
+  const remainingSecs = Math.max(0, Math.floor(EXPIRES_AT - now));
+  
+  // Warn interviewer 15 seconds before ending
+  if (remainingSecs <= 15 && remainingSecs > 0 && !warningShown) {
+    warningShown = true;
+    const alertEl = document.getElementById("sessionEndAlert");
+    if (alertEl) {
+      alertEl.style.display = "flex";
+    }
+  }
+  
+  // Update countdown display
+  const countEl = document.getElementById("alertCountdown");
+  if (countEl && warningShown) {
+    countEl.textContent = remainingSecs;
+  }
+  
+  if (remainingSecs <= 0) {
+    sessionEnded = true;
+    
+    // Hide warning
+    const alertEl = document.getElementById("sessionEndAlert");
+    if (alertEl) alertEl.style.display = "none";
+    
+    // Stop local interviewer camera tracks if active
+    if (window.intStream) {
+      try {
+        window.intStream.getTracks().forEach(track => track.stop());
+      } catch (e) {}
+    }
+    
+    // Close WebRTC PeerConnections
+    try {
+      Object.keys(peerConnections).forEach(device => {
+        if (peerConnections[device]) {
+          peerConnections[device].close();
+          peerConnections[device] = null;
+        }
+      });
+    } catch (e) {}
+    
+    // Close WebSocket
+    try {
+      if (window.ws) {
+        window.ws.onclose = null; // prevent reconnect attempts
+        window.ws.close();
+      }
+    } catch (e) {}
+    
+    alert("This proctoring session has ended. Redirecting to the home page.");
+    window.location.href = "/";
+  }
+}
+
+// Run checker every second
+setInterval(checkSessionExpiration, 1000);
 </script>
+
+<!-- Session End Warning Overlay -->
+<div id="sessionEndAlert" style="display: none; position: fixed; inset: 0; background: rgba(10,10,15,0.9); z-index: 9999; align-items: center; justify-content: center; padding: 2rem; backdrop-filter: blur(8px);">
+  <div style="background: var(--panel); border: 2px solid var(--error); border-radius: 16px; width: 100%; max-width: 440px; padding: 2rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; text-align: center; box-shadow: 0 10px 30px rgba(255,77,109,0.25);">
+    <div style="font-size: 3rem;">⚠️</div>
+    <h2 style="font-family: var(--mono); font-size: 1.2rem; color: var(--error); font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em;">Session Ending Soon</h2>
+    <p style="font-size: 0.9rem; color: var(--text); line-height: 1.5;">This proctoring session is about to end in <span id="alertCountdown" style="font-weight: bold; color: var(--error); font-family: var(--mono);">15</span> seconds. Candidate feeds will be deactivated.</p>
+    <button onclick="document.getElementById('sessionEndAlert').style.display='none'" style="margin-top: 1rem; padding: 0.6rem 1.5rem; background: var(--accent); border: none; border-radius: 8px; color: #fff; font-family: var(--mono); font-size: 0.75rem; text-transform: uppercase; cursor: pointer;">Dismiss</button>
+  </div>
+</div>
+
+<!-- Custom End Session Confirmation Modal -->
+<div id="endSessionConfirmModal" style="display: none; position: fixed; inset: 0; background: rgba(10,10,15,0.9); z-index: 9999; align-items: center; justify-content: center; padding: 2rem; backdrop-filter: blur(8px);">
+  <div style="background: var(--panel); border: 2px solid var(--error); border-radius: 16px; width: 100%; max-width: 420px; padding: 2rem; display: flex; flex-direction: column; align-items: center; gap: 1.2rem; text-align: center;">
+    <div style="font-size: 2.5rem;">⚠️</div>
+    <h2 style="font-family: var(--mono); font-size: 1.1rem; color: var(--error); font-weight: bold; text-transform: uppercase;">End Session?</h2>
+    <p style="font-size: 0.85rem; color: var(--text); line-height: 1.5;">Are you sure you want to end this proctoring session? This cannot be undone.</p>
+    <div style="display: flex; gap: 0.75rem; width: 100%;">
+      <button onclick="closeEndSessionConfirmModal()" style="flex:1; padding: 0.6rem; background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--mono); font-size: 0.75rem; cursor: pointer;">Cancel</button>
+      <button onclick="confirmEndSession()" style="flex:1; padding: 0.6rem; background: var(--error); border: none; border-radius: 8px; color: #fff; font-family: var(--mono); font-size: 0.75rem; font-weight:bold; cursor: pointer;">End Session</button>
+    </div>
+  </div>
+</div>
+
+<!-- Session Ended Overlay Modal -->
+<div id="sessionEndedModal" style="display: none; position: fixed; inset: 0; background: rgba(10,10,15,0.95); z-index: 10000; align-items: center; justify-content: center; padding: 2rem; backdrop-filter: blur(10px);">
+  <div style="background: var(--panel); border: 2px solid var(--border); border-radius: 16px; width: 100%; max-width: 440px; padding: 2.5rem 2rem; display: flex; flex-direction: column; align-items: center; gap: 1.2rem; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    <div style="font-size: 3.5rem;">🔒</div>
+    <h2 style="font-family: var(--mono); font-size: 1.4rem; color: var(--muted); font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em;">Session Ended</h2>
+    <p style="font-size: 0.9rem; color: var(--muted); line-height: 1.5;">This session has reached its scheduled limit and is now closed. All camera feeds, microphone inputs, and socket connections have been stopped.</p>
+    <div style="font-size: 0.75rem; color: var(--muted); background: rgba(255,255,255,0.02); padding: 0.8rem; border-radius: 6px; border: 1px dashed var(--border); width: 100%;">
+      As long as you do not refresh this page, you can review the candidate's final code and logs.
+    </div>
+  </div>
+</div>
 
 <!-- Interviewer Camera Live Feed Modal -->
 <div id="intCamModal" style="display: none; position: fixed; inset: 0; background: rgba(10,10,15,0.85); z-index: 1000; align-items: center; justify-content: center; padding: 2rem; backdrop-filter: blur(8px);">
@@ -1697,10 +1983,6 @@ function closeResumeModal() {
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);">
       <span style="font-family: var(--mono); font-size: 0.85rem; color: var(--text); font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase;">📄 Candidate Resume Viewer</span>
       <div style="display: flex; align-items: center; gap: 12px;">
-        <button id="genQuestionBtn" style="background: linear-gradient(135deg, #3ddc84 0%, #90e0ef 100%); border: none; border-radius: 8px; color: #0a0a0f; font-family: var(--mono); font-size: 0.72rem; font-weight: 700; padding: 0.5rem 1rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); text-transform: uppercase; letter-spacing: 0.08em; box-shadow: 0 4px 15px rgba(61,220,132,0.25);" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 20px rgba(61,220,132,0.45)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 15px rgba(61,220,132,0.25)';" onclick="alert('Question Generation Triggered!')">
-          <svg viewBox="0 0 24 24" style="width: 13px; height: 13px; fill: #0a0a0f;"><path d="M7.5,2L9,5.5L12.5,7L9,8.5L7.5,12L6,8.5L2.5,7L6,5.5L7.5,2M17.5,13L19,16.5L22.5,18L19,19.5L17.5,23L16,19.5L12.5,18L16,16.5L17.5,13M19,2.5L20,5L22.5,6L20,7L19,9.5L18,7L15.5,6L18,5L19,2.5Z"/></svg>
-          Generate Questions
-        </button>
         <button onclick="closeResumeModal()" style="background: transparent; border: none; color: var(--muted); font-size: 1.5rem; cursor: pointer; transition: color 0.2s; line-height: 1; padding: 0 4px;">&times;</button>
       </div>
     </div>
@@ -1709,5 +1991,65 @@ function closeResumeModal() {
     </div>
   </div>
 </div>
+
+<!-- Job Description Modal -->
+<div id="jobDescriptionModal" style="display: none; position: fixed; inset: 0; background: rgba(10,10,15,0.85); z-index: 1000; align-items: center; justify-content: center; padding: 2rem; backdrop-filter: blur(8px);">
+  <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 800px; height: 85vh; overflow: hidden; display: flex; flex-direction: column; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);">
+      <span style="font-family: var(--mono); font-size: 0.85rem; color: var(--text); font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase;">💼 Job Description Viewer</span>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <button onclick="closeJobDescriptionModal()" style="background: transparent; border: none; color: var(--muted); font-size: 1.5rem; cursor: pointer; transition: color 0.2s; line-height: 1; padding: 0 4px;">&times;</button>
+      </div>
+    </div>
+    <div style="flex: 1; width: 100%; padding: 2rem; overflow-y: auto; background: var(--bg);">
+      <div id="jdLoading" style="font-family: var(--mono); font-size: 0.85rem; color: var(--muted); text-align: center; margin-top: 3rem;">Loading Job Description...</div>
+      <div id="jdContent" style="display: none; flex-direction: column; gap: 1.5rem; color: var(--text);">
+        <div>
+          <h2 id="jdRole" style="font-size: 1.5rem; color: #fff; font-weight: 600; margin-bottom: 0.3rem;">Role Title</h2>
+          <div style="display: flex; gap: 1rem; font-family: var(--mono); font-size: 0.75rem; color: var(--accent);">
+            <span id="jdExp">Experience: -</span>
+            <span id="jdLoc">Location: -</span>
+          </div>
+        </div>
+        <div style="border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+          <h3 style="font-size: 0.95rem; text-transform: uppercase; color: var(--accent2); font-family: var(--mono); margin-bottom: 0.5rem; letter-spacing: 0.05em;">Overview</h3>
+          <p id="jdDesc" style="line-height: 1.6; font-size: 0.9rem; font-weight: 300;">Description...</p>
+        </div>
+        <div style="border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+          <h3 style="font-size: 0.95rem; text-transform: uppercase; color: var(--accent2); font-family: var(--mono); margin-bottom: 0.5rem; letter-spacing: 0.05em;">Key Requirements</h3>
+          <ul id="jdReqs"></ul>
+        </div>
+        <div>
+          <h3 style="font-size: 0.95rem; text-transform: uppercase; color: var(--accent2); font-family: var(--mono); margin-bottom: 0.5rem; letter-spacing: 0.05em;">Responsibilities</h3>
+          <ul id="jdResps"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  #jobDescriptionModal ul {
+    list-style-type: none;
+    padding-left: 0;
+    margin: 0;
+  }
+  #jobDescriptionModal li {
+    position: relative;
+    padding-left: 1.25rem;
+    margin-bottom: 0.4rem;
+    line-height: 1.6;
+    font-size: 0.9rem;
+    font-weight: 300;
+  }
+  #jobDescriptionModal li::before {
+    content: "⚡";
+    position: absolute;
+    left: 0;
+    top: 1px;
+    color: var(--accent);
+    font-size: 0.75rem;
+  }
+</style>
 </body>
 </html>

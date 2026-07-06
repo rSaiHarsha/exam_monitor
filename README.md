@@ -1,5 +1,13 @@
 # ExamWatch — Two-Device Exam Monitor
 
+
+# new features to add 
+1. add a new session managemet button that will shedule a session with timing until that time the session will be active.
+2. add a new tab active sessions to views the active sessions. 
+3. then add llm ot generate quesitions based on jd and resume .
+4. then add llm to check the code written by the candidate . 
+
+
 A fixed, production-quality POC for simultaneous laptop + mobile camera proctoring.
 
 ## Quick Start

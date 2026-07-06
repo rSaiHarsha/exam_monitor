@@ -1,0 +1,20 @@
+{
+  "role": "Java Developer",
+  "experience": "3 - 5 Years",
+  "location": "Remote / Hyderabad",
+  "description": "We are seeking a talented Java Developer to design, develop, and maintain high-performance, scalable Java applications. In this role, you will collaborate with cross-functional teams to build microservices, write clean and efficient code, and ensure application security and reliability.",
+  "requirements": [
+    "Strong expertise in Core Java (version 8 or higher) and OOP concepts.",
+    "Hands-on experience with Spring Framework, Spring Boot, and Spring Security.",
+    "Solid understanding of relational databases (PostgreSQL, MySQL) and ORM (Hibernate).",
+    "Experience in designing and developing RESTful Web Services.",
+    "Familiarity with containerization technologies (Docker, Kubernetes) and CI/CD pipelines.",
+    "Good understanding of microservices architecture."
+  ],
+  "responsibilities": [
+    "Design, build, and maintain efficient, reusable, and reliable Java code.",
+    "Ensure the best possible performance, quality, and responsiveness of the applications.",
+    "Identify bottlenecks and bugs, and devise solutions to mitigate these problems.",
+    "Help maintain code quality, organization, and automation."
+  ]
+}

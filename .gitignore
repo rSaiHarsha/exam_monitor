@@ -55,3 +55,12 @@ cert.pem
 
 # Local recordings folder (dynamically created)
 recordings/
+
+# Environment files
+.env
+.env.*
+
+# Local databases
+*.db
+*.db-journal
+*.sqlite3

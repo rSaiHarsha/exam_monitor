@@ -25,8 +25,14 @@ class LLMManager:
         if not api_key:
             api_key = os.getenv("NVIDIA_API_KEY")
             
-        if not api_key:
-            api_key = "mock-key"
+        if api_key:
+            api_key = api_key.strip().strip('"').strip("'")
+            
+        if not api_key or api_key == "mock-key" or not api_key.startswith("nvapi-"):
+            raise ValueError(
+                "NVIDIA_API_KEY environment variable is missing, empty, or does not start with 'nvapi-'. "
+                "Please configure a valid NVIDIA NIM API key on your server (e.g. via Render Environment Variables)."
+            )
             
         self.client = OpenAI(
             base_url="https://integrate.api.nvidia.com/v1",
